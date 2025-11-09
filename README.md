@@ -1,29 +1,65 @@
-# Create T3 App
+# Recruitify
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+Recruitify is a specialized website builder that helps recruitment agencies spin up high-converting job portals with custom domains, analytics, and candidate management.
 
-## What's next? How do I make an app with this?
+## Tech Stack
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- Next.js 15 (App Router)
+- tRPC & React Query
+- Prisma with Neon Postgres
+- Tailwind CSS & shadcn/ui
+- Stripe Billing
+- Kinde Authentication
+- UploadThing storage
+- PostHog analytics
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Getting Started
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+1. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+2. Copy the environment template and fill in the values (see next section):
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Generate the Prisma client:
+   ```bash
+   pnpm prisma generate
+   ```
+4. Start the development server:
+   ```bash
+   pnpm dev
+   ```
 
-## Learn More
+## Environment Configuration
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+Populate `.env.local` using the reference below. All secrets are required unless specifically marked optional.
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+| Variable | Description |
+| --- | --- |
+| `NODE_ENV` | `development`, `test`, or `production`. Defaults to `development`. |
+| `DATABASE_URL` | Neon Postgres connection string. [Docs](https://neon.tech/docs/getting-started/quickstart) |
+| `NEXT_PUBLIC_APP_URL` | Canonical app URL (e.g. `http://localhost:3000` for local). |
+| `KINDE_ISSUER_URL` | Your Kinde tenant domain (e.g. `https://your-tenant.kinde.com`). [Docs](https://docs.kinde.com/workflows/configuration/environment-variables-and-secrets/) |
+| `KINDE_CLIENT_ID` / `KINDE_CLIENT_SECRET` | Credentials for the Kinde application used by Recruitify. |
+| `KINDE_SITE_URL` | Base URL that Kinde should trust (usually matches `NEXT_PUBLIC_APP_URL`). |
+| `KINDE_POST_LOGIN_REDIRECT_URL` | Path users land on after login (e.g. dashboard). |
+| `KINDE_POST_LOGOUT_REDIRECT_URL` | Path users land on after logout. |
+| `STRIPE_SECRET_KEY` | Stripe secret key for billing. [Docs](https://stripe.com/docs/keys) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key exposed to the client. |
+| `STRIPE_WEBHOOK_SECRET` | Validate webhook signatures for billing events. |
+| `STRIPE_PRICE_BASIC_MONTHLY_ID` | Stripe Price ID for the Basic monthly subscription. |
+| `STRIPE_PRICE_PRO_MONTHLY_ID` | Stripe Price ID for the Pro monthly subscription. |
+| `STRIPE_PRICE_ENTERPRISE_MONTHLY_ID` | Stripe Price ID for the Enterprise monthly subscription. |
+| `UPLOADTHING_TOKEN` | UploadThing token (encodes app & secret). [Docs](https://docs.uploadthing.com/) |
+| `POSTHOG_API_KEY` | Server-side PostHog key for event ingestion. [Docs](https://posthog.com/docs/integrate/next-js) |
+| `POSTHOG_API_HOST` | PostHog instance host, defaults to `https://app.posthog.com`. |
+| `NEXT_PUBLIC_POSTHOG_KEY` | Public PostHog key used in the browser. |
+| `NEXT_PUBLIC_POSTHOG_HOST` | Public PostHog host, defaults to `https://app.posthog.com`. |
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+After updating `.env.local`, restart the dev server so Next.js picks up the changes.
 
-## How do I deploy this?
+## Project Roadmap
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+The high-level roadmap is documented separately in the planning file. Development tasks are tracked in the workspace todo list. Follow the sequence: environment setup → core data layer → builder experience → publishing → billing → analytics → launch polish.
