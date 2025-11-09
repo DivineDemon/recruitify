@@ -1,18 +1,481 @@
 generator client {
-    provider = "prisma-client-js"
-    output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+enum AgencyRole {
+  OWNER
+  ADMIN
+  EDITOR
+}
 
-    @@index([name])
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERN
+  FREELANCE
+  OTHER
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  PAUSED
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  RECEIVED
+  IN_REVIEW
+  INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum DomainStatus {
+  PENDING
+  ACTIVE
+  ERROR
+  SUSPENDED
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum AnalyticsEventType {
+  VISIT
+  APPLICATION_START
+  APPLICATION_SUBMIT
+}
+
+enum MediaAssetType {
+  GENERIC
+  LOGO
+  RESUME
+  COVER_IMAGE
+  DOCUMENT
+}
+
+enum WebhookSource {
+  STRIPE
+  KINDE
+  UPLOADTHING
+  OTHER
+}
+
+enum WebhookStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  kindeId   String   @unique
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships       AgencyMember[]
+  mediaAssets       MediaAsset[]       @relation("UserMediaAssets")
+  applicationEvents ApplicationEvent[] @relation("ApplicationEventActor")
+  auditLogs         AuditLog[]         @relation("AuditActor")
+  publishRecords    PublishRecord[]    @relation("PublishActor")
+}
+
+model Agency {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  displayName String
+  description String?
+  brandColor  String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members         AgencyMember[]
+  templates       Template[]
+  jobs            Job[]
+  applications    Application[]
+  domains         Domain[]
+  subscriptions   Subscription[]
+  invoices        Invoice[]
+  usageRecords    UsageRecord[]
+  analytics       AnalyticsDailyAggregate[]
+  analyticsEvents AnalyticsEvent[]
+  mediaAssets     MediaAsset[]
+  auditLogs       AuditLog[]
+
+  @@index([createdAt])
+}
+
+model AgencyMember {
+  id         String     @id @default(cuid())
+  agencyId   String
+  userId     String
+  role       AgencyRole
+  invitedAt  DateTime?
+  acceptedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  agency Agency @relation(fields: [agencyId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([agencyId, userId])
+  @@index([userId])
+}
+
+model Template {
+  id                 String         @id @default(cuid())
+  agencyId           String
+  title              String
+  description        String?
+  status             TemplateStatus @default(DRAFT)
+  pageTree           Json
+  publishedVersionId String?        @unique
+  analyticsSummary   Json?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  agency           Agency                    @relation(fields: [agencyId], references: [id])
+  publishedVersion TemplateVersion?          @relation("TemplatePublishedVersion", fields: [publishedVersionId], references: [id])
+  versions         TemplateVersion[]
+  pages            Page[]
+  jobs             Job[]
+  applications     Application[]
+  domains          Domain[]                  @relation("TemplateDomains")
+  publishRecords   PublishRecord[]
+  analyticsEvents  AnalyticsEvent[]
+  analyticsDaily   AnalyticsDailyAggregate[]
+
+  @@index([agencyId, status])
+}
+
+model TemplateVersion {
+  id          String   @id @default(cuid())
+  templateId  String
+  version     Int
+  pageTree    Json
+  notes       String?
+  publishedAt DateTime
+  createdAt   DateTime @default(now())
+
+  template        Template        @relation(fields: [templateId], references: [id])
+  templateCurrent Template?       @relation("TemplatePublishedVersion")
+  publishRecords  PublishRecord[]
+
+  @@unique([templateId, version])
+  @@index([publishedAt])
+}
+
+model Page {
+  id            String   @id @default(cuid())
+  templateId    String
+  title         String
+  slug          String
+  componentTree Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  template Template @relation(fields: [templateId], references: [id])
+
+  @@unique([templateId, slug])
+}
+
+model ComponentLibraryEntry {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  label      String
+  category   String
+  definition Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Job {
+  id             String         @id @default(cuid())
+  agencyId       String
+  templateId     String?
+  title          String
+  slug           String?
+  description    String
+  location       String?
+  employmentType EmploymentType @default(FULL_TIME)
+  salaryMin      Int?
+  salaryMax      Int?
+  currency       String?
+  status         JobStatus      @default(DRAFT)
+  metadata       Json?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  agency       Agency        @relation(fields: [agencyId], references: [id])
+  template     Template?     @relation(fields: [templateId], references: [id])
+  applications Application[]
+
+  @@unique([agencyId, slug])
+  @@index([agencyId, status])
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  agencyId       String
+  templateId     String
+  jobId          String?
+  applicantName  String
+  applicantEmail String
+  applicantPhone String?
+  linkedinUrl    String?
+  portfolioUrl   String?
+  resumeUrl      String?
+  coverLetter    String?
+  status         ApplicationStatus @default(RECEIVED)
+  source         String?
+  metadata       Json?
+  submittedAt    DateTime          @default(now())
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  agency   Agency             @relation(fields: [agencyId], references: [id])
+  template Template           @relation(fields: [templateId], references: [id])
+  job      Job?               @relation(fields: [jobId], references: [id])
+  events   ApplicationEvent[]
+
+  @@index([agencyId, status])
+  @@index([jobId])
+  @@index([templateId])
+}
+
+model ApplicationEvent {
+  id            String   @id @default(cuid())
+  applicationId String
+  actorId       String?
+  type          String
+  note          String?
+  data          Json?
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
+  actor       User?       @relation("ApplicationEventActor", fields: [actorId], references: [id])
+}
+
+model Domain {
+  id                String       @id @default(cuid())
+  agencyId          String
+  templateId        String?
+  hostname          String       @unique
+  type              DomainType
+  status            DomainStatus @default(PENDING)
+  verificationToken String?
+  lastCheckedAt     DateTime?
+  dnsRecords        Json?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  agency          Agency                    @relation(fields: [agencyId], references: [id])
+  template        Template?                 @relation("TemplateDomains", fields: [templateId], references: [id])
+  publishRecords  PublishRecord[]
+  analyticsEvents AnalyticsEvent[]
+  analyticsDaily  AnalyticsDailyAggregate[]
+
+  @@index([agencyId, status])
+  @@index([templateId])
+}
+
+model PublishRecord {
+  id                String   @id @default(cuid())
+  templateId        String
+  templateVersionId String?
+  domainId          String?
+  actorId           String?
+  notes             String?
+  publishedAt       DateTime @default(now())
+
+  template        Template         @relation(fields: [templateId], references: [id])
+  templateVersion TemplateVersion? @relation(fields: [templateVersionId], references: [id])
+  domain          Domain?          @relation(fields: [domainId], references: [id])
+  actor           User?            @relation("PublishActor", fields: [actorId], references: [id])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  agencyId             String             @unique
+  stripeCustomerId     String             @unique
+  stripeSubscriptionId String?
+  plan                 SubscriptionPlan
+  status               SubscriptionStatus
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAt             DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  metadata             Json?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  agency   Agency    @relation(fields: [agencyId], references: [id])
+  invoices Invoice[]
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  agencyId         String
+  subscriptionId   String
+  stripeInvoiceId  String        @unique
+  amount           Decimal       @db.Decimal(12, 2)
+  currency         String
+  hostedInvoiceUrl String?
+  pdfUrl           String?
+  status           InvoiceStatus
+  issuedAt         DateTime
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+
+  agency       Agency       @relation(fields: [agencyId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([agencyId])
+}
+
+model UsageRecord {
+  id         String   @id @default(cuid())
+  agencyId   String
+  metric     String
+  value      Int
+  recordedAt DateTime @default(now())
+
+  agency Agency @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId, metric, recordedAt])
+}
+
+model AnalyticsEvent {
+  id         String             @id @default(cuid())
+  agencyId   String
+  templateId String
+  domainId   String?
+  type       AnalyticsEventType
+  sessionId  String?
+  occurredAt DateTime           @default(now())
+  payload    Json?
+
+  agency   Agency   @relation(fields: [agencyId], references: [id])
+  template Template @relation(fields: [templateId], references: [id])
+  domain   Domain?  @relation(fields: [domainId], references: [id])
+
+  @@index([agencyId, occurredAt])
+  @@index([templateId, occurredAt])
+}
+
+model AnalyticsDailyAggregate {
+  id                String   @id @default(cuid())
+  agencyId          String
+  templateId        String
+  domainId          String?
+  date              DateTime
+  views             Int      @default(0)
+  applicationStarts Int      @default(0)
+  submissions       Int      @default(0)
+  conversionRate    Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  agency   Agency   @relation(fields: [agencyId], references: [id])
+  template Template @relation(fields: [templateId], references: [id])
+  domain   Domain?  @relation(fields: [domainId], references: [id])
+
+  @@unique([templateId, date, domainId])
+  @@index([agencyId, date])
+}
+
+model MediaAsset {
+  id         String         @id @default(cuid())
+  agencyId   String
+  uploaderId String?
+  type       MediaAssetType @default(GENERIC)
+  url        String
+  size       Int?
+  metadata   Json?
+  createdAt  DateTime       @default(now())
+
+  agency   Agency @relation(fields: [agencyId], references: [id])
+  uploader User?  @relation("UserMediaAssets", fields: [uploaderId], references: [id])
+
+  @@index([agencyId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  agencyId   String
+  actorId    String?
+  entityType String
+  entityId   String
+  action     String
+  data       Json?
+  createdAt  DateTime @default(now())
+
+  agency Agency @relation(fields: [agencyId], references: [id])
+  actor  User?  @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([agencyId, entityType, createdAt])
+}
+
+model WebhookEvent {
+  id          String        @id @default(cuid())
+  source      WebhookSource
+  eventType   String
+  status      WebhookStatus @default(PENDING)
+  payload     Json
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([source, status])
+  @@index([createdAt])
 }
