@@ -58,8 +58,54 @@ Populate `.env.local` using the reference below. All secrets are required unless
 | `NEXT_PUBLIC_POSTHOG_KEY` | Public PostHog key used in the browser. |
 | `NEXT_PUBLIC_POSTHOG_HOST` | Public PostHog host, defaults to `https://app.posthog.com`. |
 
-After updating `.env.local`, restart the dev server so Next.js picks up the changes.
+After updating `.env`, restart the dev server so Next.js picks up the changes.
 
 ## Project Roadmap
 
 The high-level roadmap is documented separately in the planning file. Development tasks are tracked in the workspace todo list. Follow the sequence: environment setup → core data layer → builder experience → publishing → billing → analytics → launch polish.
+
+## Application Routes
+
+- `/(marketing)` – public marketing site (`/`, `/features`, `/pricing`, `/faq`, `/legal/*`)
+- `/auth/callback`, `/auth/logout` – Kinde authentication handoffs
+- `/(dashboard)` – authenticated shell for all tenant features
+  - `/dashboard` – overview
+  - `/dashboard/templates`, `/dashboard/templates/[id]/builder|preview|publish|analytics`
+  - `/dashboard/jobs`, `/dashboard/jobs/[id]`
+  - `/dashboard/applications`, `/dashboard/applications/[id]`
+  - `/dashboard/domains`, `/dashboard/domains/link`
+  - `/dashboard/analytics`, `/dashboard/analytics/traffic`
+  - `/dashboard/billing`, `/dashboard/billing/invoices/[invoiceId]`, `/dashboard/upgrade`
+  - `/dashboard/settings/profile|branding|team|integrations|api`
+  - `/dashboard/agencies` (workspace switcher, optional)
+- `/site/[domain]/[...path]` – published customer sites (wildcard routing via middleware)
+- `/status` – service health
+- `/api/trpc/[trpc]` – tRPC handler
+- `/api/stripe/webhook`, `/api/uploadthing`, `/api/analytics/ingest`, `/api/status`
+
+## Prisma Model Overview
+
+| Model | Purpose | Key Relationships / Attributes |
+| --- | --- | --- |
+| `User` | Identity record synced from Kinde. | Has many `AgencyMember`, `ApplicationEvent`, `PublishRecord`, `AuditLog`, `MediaAsset`. |
+| `Agency` | Tenant workspace for a recruitment business. | Has many `AgencyMember`, `Template`, `Job`, `Application`, `Domain`, `Subscription`, `Invoice`, `UsageRecord`, `AnalyticsEvent`, `AnalyticsDailyAggregate`, `MediaAsset`, `AuditLog`. |
+| `AgencyMember` | Connects users to agencies with roles. | Belongs to `Agency` and `User`; unique per pair. |
+| `Template` | Editable website configuration. | Belongs to `Agency`; has `TemplateVersion`, `Page`, `Job`, `Application`, `Domain`, `PublishRecord`, `AnalyticsEvent`, `AnalyticsDailyAggregate`. |
+| `TemplateVersion` | Immutable snapshots for publishes. | Belongs to `Template`; referenced by `PublishRecord` and optionally as current published version. |
+| `Page` | Optional per-template page definition. | Belongs to `Template`; slug unique within template. |
+| `ComponentLibraryEntry` | Registry of reusable blocks. | Standalone metadata for the builder. |
+| `Job` | Structured job posting used in templates. | Belongs to `Agency`; optional link to `Template`; has many `Application`. |
+| `Application` | Candidate submission data. | Belongs to `Agency` and `Template`; optional `Job`; has many `ApplicationEvent`. |
+| `ApplicationEvent` | Timeline entries / status changes. | Belongs to `Application`; optional actor `User`. |
+| `Domain` | Published hostnames (subdomain/custom). | Belongs to `Agency`; optional `Template`; has `PublishRecord`, `AnalyticsEvent`, `AnalyticsDailyAggregate`. |
+| `PublishRecord` | Audit trail of publish actions. | Belongs to `Template`; optional `TemplateVersion`, `Domain`, `User`. |
+| `Subscription` | Stripe subscription state per agency. | Belongs to `Agency`; has many `Invoice`. |
+| `Invoice` | Stripe invoice metadata. | Belongs to `Agency` and `Subscription`. |
+| `UsageRecord` | Aggregated usage metrics (plan enforcement). | Belongs to `Agency`; indexed by metric/date. |
+| `AnalyticsEvent` | Raw visit/conversion events. | Belongs to `Agency`, `Template`; optional `Domain`. |
+| `AnalyticsDailyAggregate` | Precomputed analytics rollups. | Belongs to `Agency`, `Template`; optional `Domain`; unique per template/date/domain combo. |
+| `MediaAsset` | UploadThing-backed files (logos, resumes). | Belongs to `Agency`; optional uploader `User`. |
+| `AuditLog` | Workspace activity log. | Belongs to `Agency`; optional actor `User`. |
+| `WebhookEvent` | Stored incoming webhook payloads. | Tracks source (`STRIPE`, `KINDE`, `UPLOADTHING`, `OTHER`), processing status, errors. |
+
+**Core enums**: `AgencyRole`, `TemplateStatus`, `EmploymentType`, `JobStatus`, `ApplicationStatus`, `DomainType`, `DomainStatus`, `SubscriptionPlan`, `SubscriptionStatus`, `InvoiceStatus`, `AnalyticsEventType`, `MediaAssetType`, `WebhookSource`, `WebhookStatus`.
