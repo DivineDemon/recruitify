@@ -1,6 +1,15 @@
 import "./src/env.ts";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+	images: {
+		remotePatterns: [
+			{
+				hostname: "lh3.googleusercontent.com",
+				protocol: "https",
+			},
+		],
+	},
+};
 
 export default config;

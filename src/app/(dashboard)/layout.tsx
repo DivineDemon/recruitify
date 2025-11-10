@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import AppSidebar from "@/components/layout/app-sidebar";
+import Navbar from "@/components/layout/navbar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { resolveCurrentUser } from "@/server/auth";
 
 const DashboardLayout = async ({ children }: { children: ReactNode }) => {
@@ -15,15 +18,20 @@ const DashboardLayout = async ({ children }: { children: ReactNode }) => {
 			: (kindeUser?.email ?? user.email);
 
 	return (
-		<div className="min-h-screen w-full bg-background">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10">
-				<header className="flex items-center justify-between border-b pb-4">
-					<h1 className="font-semibold text-2xl">Recruitify Dashboard</h1>
-					<p className="text-muted-foreground text-sm">{displayName}</p>
-				</header>
-				<main>{children}</main>
+		<SidebarProvider>
+			<div className="flex h-screen w-full items-start justify-start">
+				<AppSidebar
+					avatar={user.imageUrl ?? ""}
+					displayName={displayName ?? ""}
+				/>
+				<div className="flex h-full w-[calc(100vw-256px)] flex-col items-start justify-start overflow-hidden">
+					<Navbar />
+					<main className="h-[calc(100vh-64px)] w-full overflow-hidden">
+						{children}
+					</main>
+				</div>
 			</div>
-		</div>
+		</SidebarProvider>
 	);
 };
 

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 	title: "Recruitify",
 	description:
 		"Recruitment agency website builder with custom domains, billing, and analytics.",
-	icons: [{ rel: "icon", url: "/favicon.ico" }],
+	icons: [{ rel: "icon", url: "/logo.svg" }],
 };
 
 const geist = Geist({
