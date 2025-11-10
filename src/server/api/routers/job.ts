@@ -1,6 +1,7 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { $Enums, type Prisma } from "@/server/db";
 
 const { EmploymentType, JobStatus } = $Enums;
@@ -53,10 +54,22 @@ const updateJobStatusInput = z.object({
 });
 
 export const jobRouter = createTRPCRouter({
-	create: publicProcedure
+	create: protectedProcedure
 		.input(createJobInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = createJobInput.parse(input);
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			if (
 				typeof data.salaryMin === "number" &&
 				typeof data.salaryMax === "number" &&
@@ -86,23 +99,57 @@ export const jobRouter = createTRPCRouter({
 			});
 		}),
 
-	list: publicProcedure.input(listJobsInput).query(async ({ ctx, input }) => {
-		const data = listJobsInput.parse(input);
-		const where: Prisma.JobWhereInput = {
-			agencyId: data.agencyId,
-			status: data.status,
-		};
+	list: protectedProcedure
+		.input(listJobsInput)
+		.query(async ({ ctx, input }) => {
+			const data = listJobsInput.parse(input);
 
-		return ctx.db.job.findMany({
-			where,
-			orderBy: { updatedAt: "desc" },
-		});
-	}),
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
 
-	update: publicProcedure
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
+			const where: Prisma.JobWhereInput = {
+				agencyId: data.agencyId,
+				status: data.status,
+			};
+
+			return ctx.db.job.findMany({
+				where,
+				orderBy: { updatedAt: "desc" },
+			});
+		}),
+
+	update: protectedProcedure
 		.input(updateJobInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updateJobInput.parse(input);
+			const job = await ctx.db.job.findUnique({
+				where: { id: data.jobId },
+				select: { agencyId: true },
+			});
+
+			if (!job) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: job.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const update: Prisma.JobUpdateInput = {};
 
 			if (typeof data.title === "string") update.title = data.title;
@@ -126,10 +173,31 @@ export const jobRouter = createTRPCRouter({
 			});
 		}),
 
-	updateStatus: publicProcedure
+	updateStatus: protectedProcedure
 		.input(updateJobStatusInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updateJobStatusInput.parse(input);
+
+			const job = await ctx.db.job.findUnique({
+				where: { id: data.jobId },
+				select: { agencyId: true },
+			});
+
+			if (!job) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: job.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.job.update({
 				where: { id: data.jobId },
 				data: {

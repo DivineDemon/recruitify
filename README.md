@@ -46,6 +46,11 @@ Populate `.env.local` using the reference below. All secrets are required unless
 | `KINDE_SITE_URL` | Base URL that Kinde should trust (usually matches `NEXT_PUBLIC_APP_URL`). |
 | `KINDE_POST_LOGIN_REDIRECT_URL` | Path users land on after login (e.g. dashboard). |
 | `KINDE_POST_LOGOUT_REDIRECT_URL` | Path users land on after logout. |
+| `KINDE_CONNECTION_PASSWORD` | (Optional) Kinde connection ID for username/password login. |
+| `KINDE_CONNECTION_GOOGLE` | (Optional) Kinde connection ID for Google OAuth. |
+| `KINDE_CONNECTION_MICROSOFT` | (Optional) Kinde connection ID for Microsoft OAuth. |
+| `KINDE_CONNECTION_APPLE` | (Optional) Kinde connection ID for Apple OAuth. |
+| `KINDE_CONNECTION_LINKEDIN` | (Optional) Kinde connection ID for LinkedIn OAuth. |
 | `STRIPE_SECRET_KEY` | Stripe secret key for billing. [Docs](https://stripe.com/docs/keys) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key exposed to the client. |
 | `STRIPE_WEBHOOK_SECRET` | Validate webhook signatures for billing events. |

@@ -1,6 +1,7 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { $Enums, type Prisma } from "@/server/db";
 
 const { TemplateStatus } = $Enums;
@@ -47,10 +48,21 @@ const archiveTemplateInput = z.object({
 });
 
 export const templateRouter = createTRPCRouter({
-	create: publicProcedure
+	create: protectedProcedure
 		.input(createTemplateInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = createTemplateInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const defaultTree: Prisma.JsonObject = {
 				version: 1,
 				nodes: [],
@@ -69,10 +81,21 @@ export const templateRouter = createTRPCRouter({
 			});
 		}),
 
-	list: publicProcedure
+	list: protectedProcedure
 		.input(listTemplatesInput)
 		.query(async ({ ctx, input }) => {
 			const data = listTemplatesInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const where: Prisma.TemplateWhereInput = {
 				agencyId: data.agencyId,
 				status: data.status,
@@ -94,10 +117,30 @@ export const templateRouter = createTRPCRouter({
 			});
 		}),
 
-	updateMetadata: publicProcedure
+	updateMetadata: protectedProcedure
 		.input(updateTemplateMetaInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updateTemplateMetaInput.parse(input);
+			const template = await ctx.db.template.findUnique({
+				where: { id: data.templateId },
+				select: { agencyId: true },
+			});
+
+			if (!template) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: template.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const update: Prisma.TemplateUpdateInput = {};
 
 			if (typeof data.title === "string") update.title = data.title;
@@ -110,10 +153,30 @@ export const templateRouter = createTRPCRouter({
 			});
 		}),
 
-	updatePageTree: publicProcedure
+	updatePageTree: protectedProcedure
 		.input(updateTemplateTreeInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updateTemplateTreeInput.parse(input);
+			const template = await ctx.db.template.findUnique({
+				where: { id: data.templateId },
+				select: { agencyId: true },
+			});
+
+			if (!template) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: template.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.template.update({
 				where: { id: data.templateId },
 				data: {
@@ -123,7 +186,7 @@ export const templateRouter = createTRPCRouter({
 			});
 		}),
 
-	publish: publicProcedure
+	publish: protectedProcedure
 		.input(publishTemplateInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = publishTemplateInput.parse(input);
@@ -138,7 +201,18 @@ export const templateRouter = createTRPCRouter({
 			});
 
 			if (!template) {
-				throw new Error("Template not found.");
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: template.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
 			const latestVersion = await ctx.db.templateVersion.aggregate({
@@ -189,7 +263,7 @@ export const templateRouter = createTRPCRouter({
 			});
 		}),
 
-	duplicate: publicProcedure
+	duplicate: protectedProcedure
 		.input(duplicateTemplateInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = duplicateTemplateInput.parse(input);
@@ -198,7 +272,18 @@ export const templateRouter = createTRPCRouter({
 			});
 
 			if (!template) {
-				throw new Error("Template not found.");
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: template.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
 			const cloneTitle =
@@ -220,10 +305,30 @@ export const templateRouter = createTRPCRouter({
 			});
 		}),
 
-	archive: publicProcedure
+	archive: protectedProcedure
 		.input(archiveTemplateInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = archiveTemplateInput.parse(input);
+			const template = await ctx.db.template.findUnique({
+				where: { id: data.templateId },
+				select: { agencyId: true },
+			});
+
+			if (!template) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: template.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.template.update({
 				where: { id: data.templateId },
 				data: {

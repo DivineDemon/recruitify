@@ -1,6 +1,7 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { $Enums } from "@/server/db";
 
 const { SubscriptionPlan, SubscriptionStatus } = $Enums;
@@ -29,19 +30,41 @@ const updatePlanInput = z.object({
 });
 
 export const subscriptionRouter = createTRPCRouter({
-	get: publicProcedure
+	get: protectedProcedure
 		.input(getSubscriptionInput)
 		.query(async ({ ctx, input }) => {
 			const data = getSubscriptionInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.subscription.findUnique({
 				where: { agencyId: data.agencyId },
 			});
 		}),
 
-	syncStripe: publicProcedure
+	syncStripe: protectedProcedure
 		.input(syncStripeInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = syncStripeInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.subscription.update({
 				where: { agencyId: data.agencyId },
 				data: {
@@ -58,10 +81,21 @@ export const subscriptionRouter = createTRPCRouter({
 			});
 		}),
 
-	updatePlan: publicProcedure
+	updatePlan: protectedProcedure
 		.input(updatePlanInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updatePlanInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.subscription.update({
 				where: { agencyId: data.agencyId },
 				data: {

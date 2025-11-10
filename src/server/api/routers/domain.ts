@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { $Enums, type Prisma } from "@/server/db";
 
 const { DomainStatus, DomainType } = $Enums;
@@ -38,10 +39,21 @@ const deleteDomainInput = z.object({
 });
 
 export const domainRouter = createTRPCRouter({
-	register: publicProcedure
+	register: protectedProcedure
 		.input(registerDomainInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = registerDomainInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const verificationToken =
 				data.type === DomainType.CUSTOM ? randomUUID() : null;
 
@@ -66,10 +78,21 @@ export const domainRouter = createTRPCRouter({
 			});
 		}),
 
-	list: publicProcedure
+	list: protectedProcedure
 		.input(listDomainsInput)
 		.query(async ({ ctx, input }) => {
 			const data = listDomainsInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const where: Prisma.DomainWhereInput = {
 				agencyId: data.agencyId,
 				templateId: data.templateId,
@@ -81,10 +104,30 @@ export const domainRouter = createTRPCRouter({
 			});
 		}),
 
-	updateStatus: publicProcedure
+	updateStatus: protectedProcedure
 		.input(updateDomainStatusInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updateDomainStatusInput.parse(input);
+			const domain = await ctx.db.domain.findUnique({
+				where: { id: data.domainId },
+				select: { agencyId: true },
+			});
+
+			if (!domain) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: domain.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.domain.update({
 				where: { id: data.domainId },
 				data: {
@@ -95,10 +138,30 @@ export const domainRouter = createTRPCRouter({
 			});
 		}),
 
-	remove: publicProcedure
+	remove: protectedProcedure
 		.input(deleteDomainInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = deleteDomainInput.parse(input);
+			const domain = await ctx.db.domain.findUnique({
+				where: { id: data.domainId },
+				select: { agencyId: true },
+			});
+
+			if (!domain) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: domain.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.domain.delete({
 				where: { id: data.domainId },
 			});

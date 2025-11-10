@@ -1,6 +1,11 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import {
+	createTRPCRouter,
+	protectedProcedure,
+	publicProcedure,
+} from "@/server/api/trpc";
 import { $Enums, type Prisma } from "@/server/db";
 
 const { ApplicationStatus } = $Enums;
@@ -66,10 +71,21 @@ export const applicationRouter = createTRPCRouter({
 			});
 		}),
 
-	list: publicProcedure
+	list: protectedProcedure
 		.input(listApplicationsInput)
 		.query(async ({ ctx, input }) => {
 			const data = listApplicationsInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const where: Prisma.ApplicationWhereInput = {
 				agencyId: data.agencyId,
 				status: data.status,
@@ -91,11 +107,31 @@ export const applicationRouter = createTRPCRouter({
 			});
 		}),
 
-	updateStatus: publicProcedure
+	updateStatus: protectedProcedure
 		.input(updateApplicationStatusInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = updateApplicationStatusInput.parse(input);
-			const application = await ctx.db.application.update({
+			const application = await ctx.db.application.findUnique({
+				where: { id: data.applicationId },
+				select: { agencyId: true },
+			});
+
+			if (!application) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: application.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
+			return ctx.db.application.update({
 				where: { id: data.applicationId },
 				data: {
 					status: data.status,
@@ -106,7 +142,7 @@ export const applicationRouter = createTRPCRouter({
 							data: {
 								status: data.status,
 							},
-							actorId: data.actorId,
+							actorId: ctx.user.id,
 						},
 					},
 				},
@@ -117,21 +153,40 @@ export const applicationRouter = createTRPCRouter({
 					},
 				},
 			});
-
-			return application;
 		}),
 
-	addEvent: publicProcedure
+	addEvent: protectedProcedure
 		.input(addApplicationEventInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = addApplicationEventInput.parse(input);
+
+			const application = await ctx.db.application.findUnique({
+				where: { id: data.applicationId },
+				select: { agencyId: true },
+			});
+
+			if (!application) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: application.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return ctx.db.applicationEvent.create({
 				data: {
 					applicationId: data.applicationId,
 					type: data.type,
 					note: data.note,
 					data: data.data,
-					actorId: data.actorId,
+					actorId: ctx.user.id,
 				},
 			});
 		}),

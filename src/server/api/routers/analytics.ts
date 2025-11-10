@@ -1,6 +1,11 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import {
+	createTRPCRouter,
+	protectedProcedure,
+	publicProcedure,
+} from "@/server/api/trpc";
 import { $Enums, type Prisma } from "@/server/db";
 
 const { AnalyticsEventType } = $Enums;
@@ -45,10 +50,21 @@ export const analyticsRouter = createTRPCRouter({
 			});
 		}),
 
-	getSummary: publicProcedure
+	getSummary: protectedProcedure
 		.input(getSummaryInput)
 		.query(async ({ ctx, input }) => {
 			const data = getSummaryInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000);
 
 			const aggregateWhere: Prisma.AnalyticsDailyAggregateWhereInput = {
@@ -99,10 +115,21 @@ export const analyticsRouter = createTRPCRouter({
 			};
 		}),
 
-	getRecentEvents: publicProcedure
+	getRecentEvents: protectedProcedure
 		.input(getEventsInput)
 		.query(async ({ ctx, input }) => {
 			const data = getEventsInput.parse(input);
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: data.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			const where: Prisma.AnalyticsEventWhereInput = {
 				agencyId: data.agencyId,
 				templateId: data.templateId,

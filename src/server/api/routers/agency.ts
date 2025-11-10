@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { $Enums } from "@/server/db";
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -18,16 +19,6 @@ const createAgencyInput = z.object({
 	displayName: z.string().min(2).max(120),
 	description: z.string().max(512).optional(),
 	plan: z.nativeEnum(SubscriptionPlan).optional(),
-	owner: z.object({
-		kindeId: z.string().min(1),
-		email: z.string().email(),
-		name: z.string().min(1).max(120).optional(),
-		imageUrl: z.string().url().optional(),
-	}),
-});
-
-const listAgenciesForUserInput = z.object({
-	kindeId: z.string().min(1),
 });
 
 const getAgencyBySlugInput = z.object({
@@ -35,27 +26,13 @@ const getAgencyBySlugInput = z.object({
 });
 
 export const agencyRouter = createTRPCRouter({
-	create: publicProcedure
+	create: protectedProcedure
 		.input(createAgencyInput)
 		.mutation(async ({ ctx, input }) => {
 			const data = createAgencyInput.parse(input);
+			const owner = ctx.user;
 			const now = new Date();
 			const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-
-			const owner = await ctx.db.user.upsert({
-				where: { kindeId: data.owner.kindeId },
-				update: {
-					email: data.owner.email,
-					name: data.owner.name,
-					imageUrl: data.owner.imageUrl,
-				},
-				create: {
-					kindeId: data.owner.kindeId,
-					email: data.owner.email,
-					name: data.owner.name,
-					imageUrl: data.owner.imageUrl,
-				},
-			});
 
 			const result = await ctx.db.$transaction(async (tx) => {
 				const agency = await tx.agency.create({
@@ -101,35 +78,22 @@ export const agencyRouter = createTRPCRouter({
 			return result;
 		}),
 
-	listForUser: publicProcedure
-		.input(listAgenciesForUserInput)
-		.query(async ({ ctx, input }) => {
-			const data = listAgenciesForUserInput.parse(input);
-			const user = await ctx.db.user.findUnique({
-				where: { kindeId: data.kindeId },
-				include: {
-					memberships: {
-						include: {
-							agency: true,
-						},
-						orderBy: {
-							agency: {
-								createdAt: "desc",
-							},
-						},
-					},
-				},
-			});
+	listForUser: protectedProcedure.query(async ({ ctx }) => {
+		const memberships = await ctx.db.agencyMember.findMany({
+			where: { userId: ctx.user.id },
+			include: {
+				agency: true,
+			},
+			orderBy: { createdAt: "desc" },
+		});
 
-			if (!user) return [];
+		return memberships.map((membership) => ({
+			agency: membership.agency,
+			role: membership.role,
+		}));
+	}),
 
-			return user.memberships.map((membership) => ({
-				agency: membership.agency,
-				role: membership.role,
-			}));
-		}),
-
-	bySlug: publicProcedure
+	bySlug: protectedProcedure
 		.input(getAgencyBySlugInput)
 		.query(async ({ ctx, input }) => {
 			const data = getAgencyBySlugInput.parse(input);
@@ -145,7 +109,17 @@ export const agencyRouter = createTRPCRouter({
 				},
 			});
 
-			if (!agency) return null;
+			if (!agency) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const isMember = agency.members.some(
+				(member) => member.userId === ctx.user.id,
+			);
+
+			if (!isMember) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
 
 			const [templateCount, jobCount, domainCount, applicationCount] =
 				await Promise.all([
