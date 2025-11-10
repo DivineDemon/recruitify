@@ -1,16 +1,6 @@
-import { NextResponse } from "next/server";
+import { createRouteHandler } from "uploadthing/next";
+import { ourFileRouter } from "./core";
 
-export async function POST() {
-	// TODO: proxy UploadThing file upload handler
-	return NextResponse.json(
-		{ message: "Upload endpoint not implemented" },
-		{ status: 501 },
-	);
-}
-
-export async function GET() {
-	return NextResponse.json(
-		{ message: "UploadThing requires POST requests" },
-		{ status: 400 },
-	);
-}
+export const { GET, POST } = createRouteHandler({
+	router: ourFileRouter,
+});

@@ -18,18 +18,33 @@ const normalizeName = (user: AnyKindeUser) =>
 const syncUserWithDatabase = async (
 	identity: AnyKindeUser,
 ): Promise<DbUser> => {
-	return db.user.upsert({
+	const existingUser = await db.user.findUnique({
 		where: { kindeId: identity.id },
-		update: {
+	});
+
+	if (!existingUser) {
+		return db.user.create({
+			data: {
+				kindeId: identity.id,
+				email: ensureEmail(identity),
+				name: normalizeName(identity),
+				imageUrl: identity.picture ?? undefined,
+			},
+		});
+	}
+
+	return db.user.update({
+		where: { id: existingUser.id },
+		data: {
 			email: ensureEmail(identity),
-			name: normalizeName(identity),
-			imageUrl: identity.picture ?? undefined,
-		},
-		create: {
-			kindeId: identity.id,
-			email: ensureEmail(identity),
-			name: normalizeName(identity),
-			imageUrl: identity.picture ?? undefined,
+			name:
+				existingUser.name && existingUser.name.trim().length > 0
+					? existingUser.name
+					: normalizeName(identity),
+			imageUrl:
+				existingUser.imageUrl && existingUser.imageUrl.trim().length > 0
+					? existingUser.imageUrl
+					: (identity.picture ?? existingUser.imageUrl ?? undefined),
 		},
 	});
 };

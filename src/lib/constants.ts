@@ -1,16 +1,14 @@
-import { Home, Settings } from "lucide-react";
+import { Home, User } from "lucide-react";
 
 export const SIDEBAR_ITEMS = [
 	{
-		id: 1,
-		name: "Dashboard",
-		path: "/dashboard",
-		icon: Home,
+		category: "Overview",
+		items: [{ href: "/dashboard", icon: Home, text: "Dashboard" }],
 	},
 	{
-		id: 2,
-		name: "Settings",
-		path: "/settings",
-		icon: Settings,
+		category: "Settings",
+		items: [
+			{ href: "/dashboard/settings/profile", icon: User, text: "Profile" },
+		],
 	},
 ];

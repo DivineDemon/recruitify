@@ -10,6 +10,9 @@ import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -45,21 +48,28 @@ const AppSidebar = ({ avatar, displayName }: AppSidebarProps) => {
 					width={100}
 				/>
 			</SidebarHeader>
-			<SidebarContent className="flex w-full flex-col items-start justify-start p-3.5">
+			<SidebarContent className="flex w-full flex-col items-start justify-start">
 				<SidebarMenu>
 					{SIDEBAR_ITEMS.map((item) => (
-						<SidebarMenuItem key={item.id}>
-							<SidebarMenuButton
-								asChild
-								className="justify-start gap-2 transition-all duration-200 hover:bg-primary/20 hover:text-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground data-[active=true]:hover:opacity-75"
-								isActive={pathname.startsWith(item.path)}
-							>
-								<Link href={item.path}>
-									<item.icon className="size-4" />
-									<span className="truncate">{item.name}</span>
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
+						<SidebarGroup key={item.category}>
+							<SidebarGroupLabel>{item.category}</SidebarGroupLabel>
+							<SidebarGroupContent>
+								{item.items.map((item) => (
+									<SidebarMenuItem key={item.href}>
+										<SidebarMenuButton
+											asChild
+											className="justify-start gap-2 transition-all duration-200 hover:bg-primary/20 hover:text-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground data-[active=true]:hover:opacity-75"
+											isActive={pathname.endsWith(item.href)}
+										>
+											<Link href={item.href}>
+												<item.icon className="size-4" />
+												<span className="truncate">{item.text}</span>
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								))}
+							</SidebarGroupContent>
+						</SidebarGroup>
 					))}
 				</SidebarMenu>
 			</SidebarContent>
