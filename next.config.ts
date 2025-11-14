@@ -12,6 +12,10 @@ const config = {
 				hostname: "utfs.io",
 				protocol: "https",
 			},
+			{
+				hostname: "gravatar.com",
+				protocol: "https",
+			},
 		],
 	},
 };

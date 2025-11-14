@@ -93,6 +93,7 @@ The high-level roadmap is documented separately in the planning file. Developmen
 - Owners manage workspace metadata (name, slug, description, branding) and switch the active context from `/dashboard/agencies`.
 - Owners can archive workspaces, which flips `Agency.status` to `ARCHIVED`, timestamps `archivedAt`, and hides the workspace from dashboards until reactivated.
 - Workspace switching persists the selected agency to `User.activeAgencyId` in the database and the HTTP-only `active-agency-id` cookie so the sidebar/layout can instantly pick up the current workspace across sessions.
+- `/dashboard/settings/team` lists the active agency’s members and lets owners/admins invite existing Recruitify accounts by email while role-gating access (owners can invite owners/admins; admins can invite editors).
 - The create + update + archive flows use server actions, UploadThing for branding assets, and enforce role checks so only owners can edit agency-level details.
 
 ## Prisma Model Overview

@@ -5,7 +5,6 @@ import { Loader2, Pencil } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -26,6 +25,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import WarningModal from "@/components/warning-modal";
 import {
 	type ArchiveAgencyFormValues,
 	type UpdateAgencyFormValues,
@@ -67,6 +67,7 @@ const AgencyActions = ({
 	const [open, setOpen] = useState(false);
 	const [isPending, startTransition] = useTransition();
 	const [isArchiving, startArchiveTransition] = useTransition();
+	const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
 
 	const form = useForm<UpdateAgencyFormValues>({
 		resolver: zodResolver(updateAgencySchema),
@@ -103,18 +104,8 @@ const AgencyActions = ({
 		});
 	});
 
-	const handleArchive = () => {
-		if (!canEdit) return;
-
+	const handleArchiveConfirm = () => {
 		startArchiveTransition(async () => {
-			const confirmation = window.confirm(
-				`Archive ${agency.displayName}? This removes workspace access until restored by support.`,
-			);
-
-			if (!confirmation) {
-				return;
-			}
-
 			const result = await onArchive({
 				agencyId: agency.id,
 			});
@@ -125,6 +116,7 @@ const AgencyActions = ({
 			}
 
 			toast.success("Agency archived.");
+			setIsArchiveDialogOpen(false);
 			setOpen(false);
 		});
 	};
@@ -238,7 +230,10 @@ const AgencyActions = ({
 								</div>
 								<Button
 									disabled={isArchiving || !canEdit}
-									onClick={handleArchive}
+									onClick={() => {
+										if (!canEdit) return;
+										setIsArchiveDialogOpen(true);
+									}}
 									type="button"
 									variant="destructive"
 								>
@@ -248,6 +243,14 @@ const AgencyActions = ({
 						</div>
 					</form>
 				</Form>
+				<WarningModal
+					cta={handleArchiveConfirm}
+					isLoading={isArchiving}
+					open={isArchiveDialogOpen}
+					setOpen={setIsArchiveDialogOpen}
+					text="Members will lose access immediately. Restoring requires support intervention."
+					title={`Archive ${agency.displayName}?`}
+				/>
 			</SheetContent>
 		</Sheet>
 	);

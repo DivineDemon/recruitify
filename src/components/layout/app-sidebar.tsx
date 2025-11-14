@@ -9,7 +9,6 @@ import Logo from "@/assets/img/logo.svg";
 import {
 	Sidebar,
 	SidebarContent,
-	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
@@ -78,53 +77,49 @@ const AppSidebar = ({
 					))}
 				</SidebarMenu>
 			</SidebarContent>
-			<SidebarFooter>
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<DropdownMenu>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton className="gap-3">
-										<div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border">
-											{avatar ? (
-												<Image
-													alt={displayName ?? "User avatar"}
-													className="shrink-0 rounded-full"
-													fill
-													src={avatar}
-												/>
-											) : (
-												<span className="font-semibold text-sm uppercase">
-													{displayName?.slice(0, 2) ?? "U"}
-												</span>
-											)}
-										</div>
-										<div className="flex flex-col">
-											<span className="truncate font-semibold text-sm leading-tight">
-												{displayName}
-											</span>
-											{activeAgencyName ? (
-												<span className="text-muted-foreground text-xs leading-tight">
-													{activeAgencyName}
-												</span>
-											) : null}
-										</div>
-										<ChevronUp className="ml-auto" />
-									</SidebarMenuButton>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent className="w-[239px]" side="top">
-									<DropdownMenuPrimitiveItem asChild variant="destructive">
-										<LogoutLink className="flex w-full items-center gap-2">
-											<LogOut className="size-4" />
-											<span>Logout</span>
-										</LogoutLink>
-									</DropdownMenuPrimitiveItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</DropdownMenu>
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarFooter>
+			<div className="w-full p-2.5">
+				<DropdownMenu>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<div className="flex w-full items-center justify-center gap-2.5 rounded-lg border p-2.5 hover:bg-muted">
+								<div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border">
+									{avatar ? (
+										<Image
+											alt={displayName ?? "User avatar"}
+											className="shrink-0 rounded-full"
+											fill
+											src={avatar}
+										/>
+									) : (
+										<span className="font-semibold text-sm uppercase">
+											{displayName?.slice(0, 2) ?? "U"}
+										</span>
+									)}
+								</div>
+								<div className="flex flex-col gap-0.5">
+									<span className="truncate font-semibold text-sm leading-tight">
+										{displayName}
+									</span>
+									{activeAgencyName ? (
+										<span className="text-muted-foreground text-xs leading-tight">
+											{activeAgencyName}
+										</span>
+									) : null}
+								</div>
+								<ChevronUp className="ml-auto size-5 opacity-65" />
+							</div>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent className="w-[239px]" side="top">
+							<DropdownMenuPrimitiveItem asChild variant="destructive">
+								<LogoutLink className="flex w-full items-center gap-2">
+									<LogOut className="size-4" />
+									<span>Logout</span>
+								</LogoutLink>
+							</DropdownMenuPrimitiveItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</DropdownMenu>
+			</div>
 		</Sidebar>
 	);
 };
