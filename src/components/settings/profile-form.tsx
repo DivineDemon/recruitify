@@ -103,15 +103,9 @@ const ProfileForm = ({ user, onSubmit }: ProfileFormProps) => {
 						</FormItem>
 					)}
 				/>
-				<div className="mt-auto flex justify-end gap-2">
-					<Button
-						className="w-full sm:w-auto"
-						disabled={isPending}
-						type="submit"
-					>
-						{isPending ? <Loader2 className="animate-spin" /> : "Save changes"}
-					</Button>
-				</div>
+				<Button className="mt-auto ml-auto" disabled={isPending} type="submit">
+					{isPending ? <Loader2 className="animate-spin" /> : "Save changes"}
+				</Button>
 			</form>
 		</Form>
 	);

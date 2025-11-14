@@ -29,9 +29,14 @@ import {
 interface AppSidebarProps {
 	avatar: string;
 	displayName: string;
+	activeAgencyName?: string | null;
 }
 
-const AppSidebar = ({ avatar, displayName }: AppSidebarProps) => {
+const AppSidebar = ({
+	avatar,
+	displayName,
+	activeAgencyName,
+}: AppSidebarProps) => {
 	const pathname = usePathname();
 
 	return (
@@ -53,7 +58,7 @@ const AppSidebar = ({ avatar, displayName }: AppSidebarProps) => {
 					{SIDEBAR_ITEMS.map((item) => (
 						<SidebarGroup key={item.category}>
 							<SidebarGroupLabel>{item.category}</SidebarGroupLabel>
-							<SidebarGroupContent>
+							<SidebarGroupContent className="space-y-1">
 								{item.items.map((item) => (
 									<SidebarMenuItem key={item.href}>
 										<SidebarMenuButton
@@ -94,9 +99,16 @@ const AppSidebar = ({ avatar, displayName }: AppSidebarProps) => {
 												</span>
 											)}
 										</div>
-										<span className="truncate font-semibold text-sm leading-tight">
-											{displayName}
-										</span>
+										<div className="flex flex-col">
+											<span className="truncate font-semibold text-sm leading-tight">
+												{displayName}
+											</span>
+											{activeAgencyName ? (
+												<span className="text-muted-foreground text-xs leading-tight">
+													{activeAgencyName}
+												</span>
+											) : null}
+										</div>
 										<ChevronUp className="ml-auto" />
 									</SidebarMenuButton>
 								</DropdownMenuTrigger>

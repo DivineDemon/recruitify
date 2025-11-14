@@ -72,7 +72,6 @@ The high-level roadmap is documented separately in the planning file. Developmen
 ## Application Routes
 
 - `/(marketing)` – public marketing site (`/`, `/features`, `/pricing`, `/faq`, `/legal/*`)
-- `/auth/callback`, `/auth/logout` – Kinde authentication handoffs
 - `/(dashboard)` – authenticated shell for all tenant features
   - `/dashboard` – overview
   - `/dashboard/templates`, `/dashboard/templates/[id]/builder|preview|publish|analytics`
@@ -82,18 +81,26 @@ The high-level roadmap is documented separately in the planning file. Developmen
   - `/dashboard/analytics`, `/dashboard/analytics/traffic`
   - `/dashboard/billing`, `/dashboard/billing/invoices/[invoiceId]`, `/dashboard/upgrade`
   - `/dashboard/settings/profile|branding|team|integrations|api`
-  - `/dashboard/agencies` (workspace switcher, optional)
+  - `/dashboard/agencies` – workspace switcher plus owner-only create/edit/archive tools
 - `/site/[domain]/[...path]` – published customer sites (wildcard routing via middleware)
 - `/status` – service health
 - `/api/trpc/[trpc]` – tRPC handler
 - `/api/stripe/webhook`, `/api/uploadthing`, `/api/analytics/ingest`, `/api/status`
 
+### Agencies Workspace Management
+
+- Each Kinde user can belong to multiple agencies via `AgencyMember` records and can own more than one workspace.
+- Owners manage workspace metadata (name, slug, description, branding) and switch the active context from `/dashboard/agencies`.
+- Owners can archive workspaces, which flips `Agency.status` to `ARCHIVED`, timestamps `archivedAt`, and hides the workspace from dashboards until reactivated.
+- Workspace switching persists the selected agency to `User.activeAgencyId` in the database and the HTTP-only `active-agency-id` cookie so the sidebar/layout can instantly pick up the current workspace across sessions.
+- The create + update + archive flows use server actions, UploadThing for branding assets, and enforce role checks so only owners can edit agency-level details.
+
 ## Prisma Model Overview
 
 | Model | Purpose | Key Relationships / Attributes |
 | --- | --- | --- |
-| `User` | Identity record synced from Kinde. | Has many `AgencyMember`, `ApplicationEvent`, `PublishRecord`, `AuditLog`, `MediaAsset`. |
-| `Agency` | Tenant workspace for a recruitment business. | Has many `AgencyMember`, `Template`, `Job`, `Application`, `Domain`, `Subscription`, `Invoice`, `UsageRecord`, `AnalyticsEvent`, `AnalyticsDailyAggregate`, `MediaAsset`, `AuditLog`. |
+| `User` | Identity record synced from Kinde. | Has many `AgencyMember`, `ApplicationEvent`, `PublishRecord`, `AuditLog`, `MediaAsset`; stores `activeAgencyId` for workspace context (mirrored to cookie). |
+| `Agency` | Tenant workspace for a recruitment business. | Has many `AgencyMember`, `Template`, `Job`, `Application`, `Domain`, `Subscription`, `Invoice`, `UsageRecord`, `AnalyticsEvent`, `AnalyticsDailyAggregate`, `MediaAsset`, `AuditLog`; tracks `status` (`ACTIVE`/`ARCHIVED`) and `archivedAt`. |
 | `AgencyMember` | Connects users to agencies with roles. | Belongs to `Agency` and `User`; unique per pair. |
 | `Template` | Editable website configuration. | Belongs to `Agency`; has `TemplateVersion`, `Page`, `Job`, `Application`, `Domain`, `PublishRecord`, `AnalyticsEvent`, `AnalyticsDailyAggregate`. |
 | `TemplateVersion` | Immutable snapshots for publishes. | Belongs to `Template`; referenced by `PublishRecord` and optionally as current published version. |
@@ -113,4 +120,4 @@ The high-level roadmap is documented separately in the planning file. Developmen
 | `AuditLog` | Workspace activity log. | Belongs to `Agency`; optional actor `User`. |
 | `WebhookEvent` | Stored incoming webhook payloads. | Tracks source (`STRIPE`, `KINDE`, `UPLOADTHING`, `OTHER`), processing status, errors. |
 
-**Core enums**: `AgencyRole`, `TemplateStatus`, `EmploymentType`, `JobStatus`, `ApplicationStatus`, `DomainType`, `DomainStatus`, `SubscriptionPlan`, `SubscriptionStatus`, `InvoiceStatus`, `AnalyticsEventType`, `MediaAssetType`, `WebhookSource`, `WebhookStatus`.
+**Core enums**: `AgencyRole`, `AgencyStatus`, `TemplateStatus`, `EmploymentType`, `JobStatus`, `ApplicationStatus`, `DomainType`, `DomainStatus`, `SubscriptionPlan`, `SubscriptionStatus`, `InvoiceStatus`, `AnalyticsEventType`, `MediaAssetType`, `WebhookSource`, `WebhookStatus`.
