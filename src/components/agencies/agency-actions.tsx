@@ -64,10 +64,11 @@ const AgencyActions = ({
 	onUpdate,
 	onArchive,
 }: AgencyActionsProps) => {
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState<boolean>(false);
 	const [isPending, startTransition] = useTransition();
 	const [isArchiving, startArchiveTransition] = useTransition();
-	const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+	const [isArchiveDialogOpen, setIsArchiveDialogOpen] =
+		useState<boolean>(false);
 
 	const form = useForm<UpdateAgencyFormValues>({
 		resolver: zodResolver(updateAgencySchema),

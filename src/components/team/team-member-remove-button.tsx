@@ -25,7 +25,7 @@ const TeamMemberRemoveButton = ({
 	onRemove,
 }: TeamMemberRemoveButtonProps) => {
 	const [isPending, startTransition] = useTransition();
-	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
 	const handleConfirm = () => {
 		startTransition(async () => {
@@ -56,6 +56,7 @@ const TeamMemberRemoveButton = ({
 					if (!canRemove || isPending) return;
 					setIsDialogOpen(true);
 				}}
+				type="button"
 				variant={isSelf ? "destructive" : "outline"}
 			>
 				{isPending ? (

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { resolveCurrentUser } from "@/server/auth";
 import { db } from "@/server/db";
 
@@ -36,9 +37,17 @@ const DashboardHomePage = async () => {
 					Looks like you haven&apos;t created an agency yet. Create your first
 					workspace to start building recruitment sites.
 				</p>
-				<Button asChild>
-					<Link href="/dashboard/agencies">Create an agency</Link>
-				</Button>
+				<Link
+					className={cn(
+						buttonVariants({
+							variant: "default",
+							size: "default",
+						}),
+					)}
+					href="/dashboard/agencies"
+				>
+					Create an agency
+				</Link>
 			</div>
 		);
 	}
@@ -109,9 +118,17 @@ const DashboardHomePage = async () => {
 				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between">
 						<h2 className="font-semibold text-lg">Recent templates</h2>
-						<Button asChild size="sm" variant="outline">
-							<Link href="/dashboard/templates">View all</Link>
-						</Button>
+						<Link
+							className={cn(
+								buttonVariants({
+									variant: "outline",
+									size: "sm",
+								}),
+							)}
+							href="/dashboard/templates"
+						>
+							View all
+						</Link>
 					</div>
 					{recentTemplates.length === 0 ? (
 						<div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
@@ -216,11 +233,17 @@ const StatCard = ({
 };
 
 const ActionButton = ({ label, href }: { label: string; href: string }) => (
-	<Button asChild size="sm" variant="ghost">
-		<Link className="justify-start" href={href}>
-			{label}
-		</Link>
-	</Button>
+	<Link
+		className={cn(
+			buttonVariants({
+				variant: "ghost",
+				size: "sm",
+			}),
+		)}
+		href={href}
+	>
+		{label}
+	</Link>
 );
 
 export default DashboardHomePage;

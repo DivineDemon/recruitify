@@ -8,7 +8,7 @@ import TeamInviteForm from "@/components/team/team-invite-form";
 import TeamMemberRemoveButton from "@/components/team/team-member-remove-button";
 import TeamMemberRoleSelect from "@/components/team/team-member-role-select";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ACTIVE_AGENCY_COOKIE_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type {
@@ -377,9 +377,17 @@ const TeamSettingsPage = async () => {
 					You are not part of any active agencies yet. Create or switch to a
 					workspace from the Agencies tab to manage your team.
 				</p>
-				<Button asChild>
-					<Link href="/dashboard/agencies">Go to Agencies</Link>
-				</Button>
+				<Link
+					className={cn(
+						buttonVariants({
+							variant: "default",
+							size: "default",
+						}),
+					)}
+					href="/dashboard/agencies"
+				>
+					Go to Agencies
+				</Link>
 			</div>
 		);
 	}

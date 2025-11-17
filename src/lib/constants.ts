@@ -7,8 +7,9 @@ import {
 	Crown,
 	FileText,
 	Globe,
+	Hammer,
 	Home,
-	LayoutDashboard,
+	LayoutTemplate,
 	Puzzle,
 	Settings,
 	User,
@@ -20,15 +21,25 @@ export const SIDEBAR_ITEMS = [
 		category: "Overview",
 		items: [
 			{ href: "/dashboard", icon: Home, text: "Dashboard" },
-			{
-				href: "/dashboard/templates",
-				icon: LayoutDashboard,
-				text: "Templates",
-			},
 			{ href: "/dashboard/jobs", icon: FileText, text: "Jobs" },
 			{ href: "/dashboard/applications", icon: Activity, text: "Applications" },
 			{ href: "/dashboard/domains", icon: Globe, text: "Domains" },
 			{ href: "/dashboard/analytics", icon: BarChart3, text: "Analytics" },
+		],
+	},
+	{
+		category: "Builder & Templates",
+		items: [
+			{
+				href: "/dashboard/builder",
+				icon: Hammer,
+				text: "Builder",
+			},
+			{
+				href: "/dashboard/templates",
+				icon: LayoutTemplate,
+				text: "Templates",
+			},
 		],
 	},
 	{

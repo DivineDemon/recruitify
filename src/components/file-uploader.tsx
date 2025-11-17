@@ -39,7 +39,7 @@ const FileUploader = ({
 	withContainer = true,
 }: FileUploaderProps) => {
 	const inputRef = useRef<HTMLInputElement | null>(null);
-	const [isUploading, setIsUploading] = useState(false);
+	const [isUploading, setIsUploading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const { startUpload, isUploading: uploadThingUploading } =
