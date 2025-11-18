@@ -63,7 +63,7 @@ const blockIcons: Record<string, typeof Layout> = {
 	footer: Copyright,
 	"job-list": Briefcase,
 	"job-card": Briefcase,
-	"application-form": FileText,
+	"job-form": FileText,
 };
 
 export const Palette = ({ blocks }: PaletteProps) => {

@@ -32,6 +32,10 @@
 						"functions": ["clsx", "cva", "cn"]
 					}
 				}
+			},
+			"correctness": {
+				"noUnusedVariables": "error",
+				"noUnusedFunctionParameters": "error"
 			}
 		}
 	},

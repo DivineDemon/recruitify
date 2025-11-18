@@ -47,6 +47,10 @@ const archiveTemplateInput = z.object({
 	templateId: z.string().cuid(),
 });
 
+const getTemplateInput = z.object({
+	templateId: z.string().cuid(),
+});
+
 export const templateRouter = createTRPCRouter({
 	create: protectedProcedure
 		.input(createTemplateInput)
@@ -303,6 +307,44 @@ export const templateRouter = createTRPCRouter({
 					}) as Prisma.InputJsonValue,
 				},
 			});
+		}),
+
+	get: protectedProcedure
+		.input(getTemplateInput)
+		.query(async ({ ctx, input }) => {
+			const data = getTemplateInput.parse(input);
+			const template = await ctx.db.template.findUnique({
+				where: { id: data.templateId },
+				select: {
+					id: true,
+					agencyId: true,
+					title: true,
+					description: true,
+					status: true,
+					pageTree: true,
+					createdAt: true,
+					updatedAt: true,
+					analyticsSummary: true,
+					publishedVersionId: true,
+				},
+			});
+
+			if (!template) {
+				throw new TRPCError({ code: "NOT_FOUND" });
+			}
+
+			const membership = await ctx.db.agencyMember.findFirst({
+				where: {
+					agencyId: template.agencyId,
+					userId: ctx.user.id,
+				},
+			});
+
+			if (!membership) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
+			return template;
 		}),
 
 	archive: protectedProcedure

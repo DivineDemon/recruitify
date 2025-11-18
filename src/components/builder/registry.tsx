@@ -540,7 +540,7 @@ const ButtonBlock: BlockDefinition = {
 		type: "button",
 		props: { label: "Click me", href: "#", variant: "default", type: "button" },
 	}),
-	render: (node, _children, parentType) => {
+	render: (node, _, parentType) => {
 		const label = String(node.props.label ?? "Button");
 		const href = String(node.props.href ?? "#");
 		const buttonType = String(node.props.type ?? "button");
@@ -2173,7 +2173,6 @@ const SelectBlock: BlockDefinition = {
 			? node.props.options.map(String)
 			: [String(node.props.options ?? "")];
 		const required = Boolean(node.props.required ?? false);
-		const _name = String(node.props.name ?? "");
 		const selectId = `select-${node.id}`;
 
 		return (
@@ -3809,7 +3808,7 @@ const JobListBlock: BlockDefinition = {
 					)}
 					{showFilters && (
 						<div className="mb-6 flex flex-wrap gap-4">
-							<Select disabled>
+							<Select disabled value="all">
 								<SelectTrigger className="w-[180px]">
 									<SelectValue placeholder="All Locations" />
 								</SelectTrigger>
@@ -3819,7 +3818,7 @@ const JobListBlock: BlockDefinition = {
 									<SelectItem value="remote">Remote</SelectItem>
 								</SelectContent>
 							</Select>
-							<Select disabled>
+							<Select disabled value="all">
 								<SelectTrigger className="w-[180px]">
 									<SelectValue placeholder="All Types" />
 								</SelectTrigger>
@@ -4337,14 +4336,14 @@ const JobCardBlock: BlockDefinition = {
 	},
 };
 
-const ApplicationFormBlock: BlockDefinition = {
-	key: "application-form",
-	label: "Application Form",
+const JobFormBlock: BlockDefinition = {
+	key: "job-form",
+	label: "Job Form",
 	category: "jobs",
 	allowsChildren: false,
 	create: () => ({
 		id: nanoid(),
-		type: "application-form",
+		type: "job-form",
 		props: {
 			title: "Apply for this Position",
 			action: "",
@@ -4422,8 +4421,7 @@ const ApplicationFormBlock: BlockDefinition = {
 														{String(j.title ?? "")}
 														{String(j.company ?? "") && (
 															<span className="text-muted-foreground text-sm">
-																{" "}
-																- {String(j.company)}
+																&nbsp; - {String(j.company)}
 															</span>
 														)}
 													</SelectItem>
@@ -4791,7 +4789,7 @@ export const BLOCKS: Record<string, BlockDefinition> = {
 	footer: FooterBlock,
 	"job-list": JobListBlock,
 	"job-card": JobCardBlock,
-	"application-form": ApplicationFormBlock,
+	"job-form": JobFormBlock,
 };
 
 export const PALETTE: BlockDefinition[] = [
@@ -4825,7 +4823,7 @@ export const PALETTE: BlockDefinition[] = [
 	FooterBlock,
 	JobListBlock,
 	JobCardBlock,
-	ApplicationFormBlock,
+	JobFormBlock,
 ];
 
 export const createInitialTree = (): BuilderNode => {
