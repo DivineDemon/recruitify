@@ -1,7 +1,7 @@
+"use client";
+
 import Link from "next/link";
 import { PagePlaceholder } from "@/components/page-placeholder";
-
-export const dynamic = "force-dynamic";
 
 const MarketingHomePage = () => {
 	return (
