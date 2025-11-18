@@ -34,7 +34,6 @@ export const EditTemplateDialog = ({
 	const [title, setTitle] = useState(initialTitle);
 	const [description, setDescription] = useState(initialDescription);
 
-	// Update fields when dialog opens or initial values change
 	useEffect(() => {
 		if (open) {
 			setTitle(initialTitle);
