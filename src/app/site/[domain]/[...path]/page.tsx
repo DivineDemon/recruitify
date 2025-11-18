@@ -1,11 +1,15 @@
+"use client";
+
+import { use } from "react";
 import { PagePlaceholder } from "@/components/page-placeholder";
 
 interface PublishedSitePageProps {
-	params: { domain: string; path: string[] };
+	params: Promise<{ domain: string; path: string[] }>;
 }
 
 const PublishedSitePage = ({ params }: PublishedSitePageProps) => {
-	const fullPath = [params.domain, ...(params.path ?? [])].join("/");
+	const { domain, path } = use(params);
+	const fullPath = [domain, ...(path ?? [])].join("/");
 
 	return (
 		<PagePlaceholder
