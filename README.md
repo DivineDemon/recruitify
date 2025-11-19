@@ -2,6 +2,15 @@
 
 Recruitify is a specialized website builder that helps recruitment agencies spin up high-converting job portals with custom domains, analytics, and candidate management.
 
+## Core Features
+
+- **Agency Management**: Create, update, and manage multiple workspaces with role-based access control
+- **Team Management**: Invite team members, assign roles (Owner/Admin/Editor), and manage permissions
+- **Visual Website Builder**: Drag-and-drop builder with pre-built sections, form elements, and job-specific blocks
+- **Template Management**: Create, edit, duplicate, and archive website templates with version control
+- **User Profile Management**: Manage user profiles with avatar uploads and settings
+- **AI-Powered Template Generation**: Generate website templates automatically using AI
+
 ## Tech Stack
 
 - Next.js 15 (App Router)
@@ -69,25 +78,33 @@ After updating `.env`, restart the dev server so Next.js picks up the changes.
 
 ### ✅ Completed Features
 
-#### Authentication & User Management
+#### Authentication & User Management ✅
 - **Kinde Integration**: Full OAuth setup with email/password, Google, Microsoft, Apple, and LinkedIn
 - **User Sync**: Automatic user creation/update from Kinde on login
 - **Protected Routes**: Server-side auth checks for all dashboard routes
 - **Profile Settings**: User profile management with UploadThing avatar uploads
 
-#### Workspace Management
+#### Workspace Management ✅
 - **Multi-Agency Support**: Users can belong to multiple agencies with different roles
 - **Agency CRUD**: Create, update, and archive agencies (soft delete)
 - **Workspace Switching**: Active agency persistence via database and cookies
 - **Role-Based Access Control**: OWNER, ADMIN, EDITOR roles with proper permissions
 - **Team Management**: Invite members, change roles, remove/leave workspace with confirmation modals
 
-#### Builder - Core Infrastructure
+#### Template Management ✅
+- **Template CRUD**: Create, list, update metadata, and archive templates
+- **Template Builder Integration**: Full integration with visual builder for editing page trees
+- **Template Duplication**: Duplicate existing templates with optional title customization
+- **Version Control**: Template versioning system with publish records
+- **Autosave**: Automatic saving of template changes with debouncing
+- **Template Metadata**: Edit template title and description
+
+#### Builder - Core Infrastructure ✅
 - **Component Registry**: Centralized block definitions with render and inspector functions
 - **Drag & Drop**: Full drag-and-drop support for adding and reordering elements
 - **Canvas System**: Interactive canvas with visual feedback, selection, and drop zones
 - **Inspector Panel**: Property editing with conditional rendering (shows inspector when element selected, palette otherwise)
-- **Local Storage Autosave**: Automatic draft saving to localStorage
+- **Database Persistence**: Template state saved to database with autosave functionality
 - **Theme Integration**: Dark/light mode support with dynamic grid background
 
 #### Builder - Layout Blocks (Phase 1)
@@ -248,7 +265,7 @@ The high-level roadmap is documented separately in the planning file. Developmen
   - `/dashboard/domains`, `/dashboard/domains/link`
   - `/dashboard/analytics`, `/dashboard/analytics/traffic`
   - `/dashboard/billing`, `/dashboard/billing/invoices/[invoiceId]`, `/dashboard/upgrade`
-  - `/dashboard/settings/profile|branding|team|integrations|api`
+  - `/dashboard/settings/profile|branding|team`
   - `/dashboard/agencies` – workspace switcher plus owner-only create/edit/archive tools
 - `/site/[domain]/[...path]` – published customer sites (wildcard routing via middleware)
 - `/status` – service health
