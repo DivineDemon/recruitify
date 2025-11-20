@@ -13,6 +13,8 @@ const createTemplateInput = z.object({
 	title: z.string().min(2).max(120),
 	description: z.string().max(512).optional(),
 	pageTree: jsonSchema.optional(),
+	selectedThemeId: z.string().cuid().optional().nullable(),
+	selectedLogoId: z.string().cuid().optional().nullable(),
 });
 
 const listTemplatesInput = z.object({
@@ -25,6 +27,8 @@ const updateTemplateMetaInput = z.object({
 	title: z.string().min(2).max(120).optional(),
 	description: z.string().max(512).nullable().optional(),
 	status: z.nativeEnum(TemplateStatus).optional(),
+	selectedThemeId: z.string().cuid().optional().nullable(),
+	selectedLogoId: z.string().cuid().optional().nullable(),
 });
 
 const updateTemplateTreeInput = z.object({
@@ -67,6 +71,57 @@ export const templateRouter = createTRPCRouter({
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
+			// Validate theme belongs to agency if provided
+			if (data.selectedThemeId) {
+				const theme = await ctx.db.theme.findUnique({
+					where: { id: data.selectedThemeId },
+					select: { agencyId: true },
+				});
+
+				if (!theme) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Theme not found",
+					});
+				}
+
+				if (theme.agencyId !== data.agencyId) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Theme does not belong to this agency",
+					});
+				}
+			}
+
+			// Validate logo belongs to agency if provided
+			if (data.selectedLogoId) {
+				const logo = await ctx.db.mediaAsset.findUnique({
+					where: { id: data.selectedLogoId },
+					select: { agencyId: true, type: true },
+				});
+
+				if (!logo) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Logo not found",
+					});
+				}
+
+				if (logo.agencyId !== data.agencyId) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Logo does not belong to this agency",
+					});
+				}
+
+				if (logo.type !== "LOGO") {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Selected media asset is not a logo",
+					});
+				}
+			}
+
 			const defaultTree: Prisma.JsonObject = {
 				version: 1,
 				nodes: [],
@@ -81,6 +136,8 @@ export const templateRouter = createTRPCRouter({
 					description: data.description,
 					status: TemplateStatus.DRAFT,
 					pageTree,
+					selectedThemeId: data.selectedThemeId ?? null,
+					selectedLogoId: data.selectedLogoId ?? null,
 				},
 			});
 		}),
@@ -145,15 +202,79 @@ export const templateRouter = createTRPCRouter({
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
-			const update: Prisma.TemplateUpdateInput = {};
+			// Validate theme belongs to agency if provided
+			if (data.selectedThemeId !== undefined) {
+				if (data.selectedThemeId) {
+					const theme = await ctx.db.theme.findUnique({
+						where: { id: data.selectedThemeId },
+						select: { agencyId: true },
+					});
+
+					if (!theme) {
+						throw new TRPCError({
+							code: "NOT_FOUND",
+							message: "Theme not found",
+						});
+					}
+
+					if (theme.agencyId !== template.agencyId) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "Theme does not belong to this agency",
+						});
+					}
+				}
+			}
+
+			// Validate logo belongs to agency if provided
+			if (data.selectedLogoId !== undefined) {
+				if (data.selectedLogoId) {
+					const logo = await ctx.db.mediaAsset.findUnique({
+						where: { id: data.selectedLogoId },
+						select: { agencyId: true, type: true },
+					});
+
+					if (!logo) {
+						throw new TRPCError({
+							code: "NOT_FOUND",
+							message: "Logo not found",
+						});
+					}
+
+					if (logo.agencyId !== template.agencyId) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "Logo does not belong to this agency",
+						});
+					}
+
+					if (logo.type !== "LOGO") {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "Selected media asset is not a logo",
+						});
+					}
+				}
+			}
+
+			const update: Prisma.TemplateUpdateInput & {
+				selectedThemeId?: string | null;
+				selectedLogoId?: string | null;
+			} = {};
 
 			if (typeof data.title === "string") update.title = data.title;
 			if ("description" in data) update.description = data.description ?? null;
 			if (data.status) update.status = data.status;
+			if ("selectedThemeId" in data) {
+				update.selectedThemeId = data.selectedThemeId ?? null;
+			}
+			if ("selectedLogoId" in data) {
+				update.selectedLogoId = data.selectedLogoId ?? null;
+			}
 
 			return ctx.db.template.update({
 				where: { id: data.templateId },
-				data: update,
+				data: update as Prisma.TemplateUpdateInput,
 			});
 		}),
 
@@ -273,6 +394,14 @@ export const templateRouter = createTRPCRouter({
 			const data = duplicateTemplateInput.parse(input);
 			const template = await ctx.db.template.findUnique({
 				where: { id: data.templateId },
+				select: {
+					agencyId: true,
+					title: true,
+					description: true,
+					pageTree: true,
+					selectedThemeId: true,
+					selectedLogoId: true,
+				},
 			});
 
 			if (!template) {
@@ -305,6 +434,8 @@ export const templateRouter = createTRPCRouter({
 						nodes: [],
 						lastEditedAt: new Date().toISOString(),
 					}) as Prisma.InputJsonValue,
+					selectedThemeId: template.selectedThemeId,
+					selectedLogoId: template.selectedLogoId,
 				},
 			});
 		}),
@@ -326,6 +457,23 @@ export const templateRouter = createTRPCRouter({
 					updatedAt: true,
 					analyticsSummary: true,
 					publishedVersionId: true,
+					selectedThemeId: true,
+					selectedLogoId: true,
+					selectedTheme: {
+						select: {
+							id: true,
+							name: true,
+							description: true,
+							isDefault: true,
+						},
+					},
+					selectedLogo: {
+						select: {
+							id: true,
+							url: true,
+							type: true,
+						},
+					},
 				},
 			});
 

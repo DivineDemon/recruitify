@@ -3,8 +3,10 @@ import { analyticsRouter } from "@/server/api/routers/analytics";
 import { applicationRouter } from "@/server/api/routers/application";
 import { domainRouter } from "@/server/api/routers/domain";
 import { jobRouter } from "@/server/api/routers/job";
+import { mediaRouter } from "@/server/api/routers/media";
 import { subscriptionRouter } from "@/server/api/routers/subscription";
 import { templateRouter } from "@/server/api/routers/template";
+import { themeRouter } from "@/server/api/routers/theme";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 export const appRouter = createTRPCRouter({
@@ -15,6 +17,8 @@ export const appRouter = createTRPCRouter({
 	domain: domainRouter,
 	subscription: subscriptionRouter,
 	analytics: analyticsRouter,
+	theme: themeRouter,
+	media: mediaRouter,
 });
 
 export type AppRouter = typeof appRouter;

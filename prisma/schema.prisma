@@ -138,8 +138,6 @@ model Agency {
   slug        String       @unique
   displayName String
   description String?
-  brandColor  String?
-  logoUrl     String?
   status      AgencyStatus @default(ACTIVE)
   archivedAt  DateTime?
   createdAt   DateTime     @default(now())
@@ -147,6 +145,7 @@ model Agency {
 
   members         AgencyMember[]
   activeUsers     User[]                    @relation("ActiveAgency")
+  themes          Theme[]
   templates       Template[]
   jobs            Job[]
   applications    Application[]
@@ -180,6 +179,23 @@ model AgencyMember {
   @@index([userId])
 }
 
+model Theme {
+  id          String   @id @default(cuid())
+  agencyId    String
+  name        String
+  description String?
+  config      Json
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agency    Agency     @relation(fields: [agencyId], references: [id])
+  templates Template[]
+
+  @@index([agencyId])
+  @@index([agencyId, isDefault])
+}
+
 model Template {
   id                 String         @id @default(cuid())
   agencyId           String
@@ -188,11 +204,15 @@ model Template {
   status             TemplateStatus @default(DRAFT)
   pageTree           Json
   publishedVersionId String?        @unique
+  selectedThemeId    String?
+  selectedLogoId     String?
   analyticsSummary   Json?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
   agency           Agency                    @relation(fields: [agencyId], references: [id])
+  selectedTheme    Theme?                    @relation(fields: [selectedThemeId], references: [id])
+  selectedLogo     MediaAsset?               @relation("TemplateLogo", fields: [selectedLogoId], references: [id])
   publishedVersion TemplateVersion?          @relation("TemplatePublishedVersion", fields: [publishedVersionId], references: [id])
   versions         TemplateVersion[]
   pages            Page[]
@@ -454,8 +474,9 @@ model MediaAsset {
   metadata   Json?
   createdAt  DateTime       @default(now())
 
-  agency   Agency @relation(fields: [agencyId], references: [id])
-  uploader User?  @relation("UserMediaAssets", fields: [uploaderId], references: [id])
+  agency       Agency     @relation(fields: [agencyId], references: [id])
+  uploader     User?      @relation("UserMediaAssets", fields: [uploaderId], references: [id])
+  templateLogo Template[] @relation("TemplateLogo")
 
   @@index([agencyId])
 }
