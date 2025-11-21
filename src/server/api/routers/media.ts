@@ -3,6 +3,10 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { $Enums, type Prisma } from "@/server/db";
+import {
+	deleteUploadthingFile,
+	extractUploadthingKey,
+} from "@/server/uploadthing";
 
 const { MediaAssetType } = $Enums;
 
@@ -21,6 +25,7 @@ const createMediaAssetInput = z.object({
 	url: z.string().url(),
 	size: z.number().int().positive().optional(),
 	metadata: z.record(z.any()).optional(),
+	uploadthingKey: z.string().optional(),
 });
 
 const deleteMediaAssetInput = z.object({
@@ -53,6 +58,7 @@ export const mediaRouter = createTRPCRouter({
 					url: data.url,
 					size: data.size,
 					metadata: data.metadata as Prisma.InputJsonValue,
+					uploadthingKey: data.uploadthingKey,
 				},
 			});
 		}),
@@ -91,6 +97,11 @@ export const mediaRouter = createTRPCRouter({
 							id: true,
 							name: true,
 							email: true,
+						},
+					},
+					_count: {
+						select: {
+							templateLogo: true,
 						},
 					},
 				},
@@ -186,7 +197,12 @@ export const mediaRouter = createTRPCRouter({
 			}
 
 			// TODO: In the future, we might want to delete the file from UploadThing storage
-			// For now, we just delete the database record
+			const uploadthingKey =
+				mediaAsset.uploadthingKey ?? extractUploadthingKey(mediaAsset.url);
+
+			if (uploadthingKey) {
+				await deleteUploadthingFile(uploadthingKey);
+			}
 
 			return ctx.db.mediaAsset.delete({
 				where: { id: data.mediaAssetId },

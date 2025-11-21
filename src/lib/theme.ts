@@ -1,249 +1,158 @@
 import type { ThemeConfig } from "@/types/theme";
 import { parseThemeConfig } from "@/types/theme";
 
+type ThemeVariableMap = Record<string, string>;
+
+function buildThemeVariableMap(config: ThemeConfig): ThemeVariableMap {
+	const variables: ThemeVariableMap = {};
+	const setVar = (key: string, value: string | number | undefined | null) => {
+		if (value === undefined || value === null) {
+			return;
+		}
+		variables[key] = `${value}`;
+	};
+
+	// Colors
+	setVar("--theme-primary", config.colors.primary);
+	setVar("--theme-primary-hover", config.colors.primaryHover);
+	setVar("--theme-primary-foreground", config.colors.primaryForeground);
+
+	setVar("--theme-secondary", config.colors.secondary);
+	setVar("--theme-secondary-hover", config.colors.secondaryHover);
+	setVar("--theme-secondary-foreground", config.colors.secondaryForeground);
+
+	setVar("--theme-accent", config.colors.accent);
+	setVar("--theme-accent-hover", config.colors.accentHover);
+	setVar("--theme-accent-foreground", config.colors.accentForeground);
+
+	setVar("--theme-background", config.colors.background);
+	setVar("--theme-surface", config.colors.surface);
+	setVar("--theme-card", config.colors.card);
+	setVar("--theme-card-foreground", config.colors.cardForeground);
+
+	// Text colors
+	setVar("--theme-text-primary", config.colors.text.primary);
+	setVar("--theme-text-secondary", config.colors.text.secondary);
+	setVar("--theme-text-muted", config.colors.text.muted);
+	setVar("--theme-text-inverse", config.colors.text.inverse);
+
+	// Border colors
+	setVar("--theme-border", config.colors.border);
+	setVar("--theme-input", config.colors.input);
+	setVar("--theme-ring", config.colors.ring);
+
+	// Button colors
+	setVar("--theme-button-primary", config.colors.button.primary);
+	setVar("--theme-button-primary-hover", config.colors.button.primaryHover);
+	setVar("--theme-button-secondary", config.colors.button.secondary);
+	setVar("--theme-button-secondary-hover", config.colors.button.secondaryHover);
+	setVar("--theme-button-destructive", config.colors.button.destructive);
+	setVar(
+		"--theme-button-destructive-hover",
+		config.colors.button.destructiveHover,
+	);
+
+	// Status colors
+	setVar("--theme-success", config.colors.success);
+	setVar("--theme-warning", config.colors.warning);
+	setVar("--theme-error", config.colors.error);
+	setVar("--theme-info", config.colors.info);
+
+	// Chart colors
+	setVar("--theme-chart-primary", config.colors.chart?.primary);
+	setVar("--theme-chart-secondary", config.colors.chart?.secondary);
+	setVar("--theme-chart-tertiary", config.colors.chart?.tertiary);
+
+	// Typography - Font families
+	setVar("--theme-font-primary", config.typography.fontFamily.primary);
+	setVar("--theme-font-secondary", config.typography.fontFamily.secondary);
+	setVar("--theme-font-mono", config.typography.fontFamily.monospace);
+
+	// Typography - Font sizes
+	setVar("--theme-font-size-xs", config.typography.fontSize.xs);
+	setVar("--theme-font-size-sm", config.typography.fontSize.sm);
+	setVar("--theme-font-size-base", config.typography.fontSize.base);
+	setVar("--theme-font-size-lg", config.typography.fontSize.lg);
+	setVar("--theme-font-size-xl", config.typography.fontSize.xl);
+	setVar("--theme-font-size-2xl", config.typography.fontSize["2xl"]);
+	setVar("--theme-font-size-3xl", config.typography.fontSize["3xl"]);
+	setVar("--theme-font-size-4xl", config.typography.fontSize["4xl"]);
+	setVar("--theme-font-size-5xl", config.typography.fontSize["5xl"]);
+
+	// Typography - Font weights
+	setVar("--theme-font-weight-light", config.typography.fontWeight.light);
+	setVar("--theme-font-weight-normal", config.typography.fontWeight.normal);
+	setVar("--theme-font-weight-medium", config.typography.fontWeight.medium);
+	setVar("--theme-font-weight-semibold", config.typography.fontWeight.semibold);
+	setVar("--theme-font-weight-bold", config.typography.fontWeight.bold);
+
+	// Typography - Line heights
+	setVar("--theme-line-height-tight", config.typography.lineHeight.tight);
+	setVar("--theme-line-height-normal", config.typography.lineHeight.normal);
+	setVar("--theme-line-height-relaxed", config.typography.lineHeight.relaxed);
+
+	// Spacing
+	Object.entries(config.spacing).forEach(([key, value]) => {
+		setVar(`--theme-spacing-${key}`, value);
+	});
+
+	// Border radius
+	setVar("--theme-radius-none", config.borderRadius.none);
+	setVar("--theme-radius-sm", config.borderRadius.sm);
+	setVar("--theme-radius-md", config.borderRadius.md);
+	setVar("--theme-radius-lg", config.borderRadius.lg);
+	setVar("--theme-radius-xl", config.borderRadius.xl);
+	setVar("--theme-radius-full", config.borderRadius.full);
+
+	// Shadows
+	setVar("--theme-shadow-sm", config.shadows?.sm);
+	setVar("--theme-shadow-md", config.shadows?.md);
+	setVar("--theme-shadow-lg", config.shadows?.lg);
+	setVar("--theme-shadow-xl", config.shadows?.xl);
+	setVar("--theme-shadow-2xl", config.shadows?.["2xl"]);
+	setVar("--theme-shadow-inner", config.shadows?.inner);
+	setVar("--theme-shadow-none", config.shadows?.none);
+
+	// Transitions
+	setVar(
+		"--theme-transition-duration-fast",
+		config.transitions?.duration?.fast,
+	);
+	setVar(
+		"--theme-transition-duration-normal",
+		config.transitions?.duration?.normal,
+	);
+	setVar(
+		"--theme-transition-duration-slow",
+		config.transitions?.duration?.slow,
+	);
+
+	setVar(
+		"--theme-transition-easing-default",
+		config.transitions?.easing?.default,
+	);
+	setVar("--theme-transition-easing-in", config.transitions?.easing?.in);
+	setVar("--theme-transition-easing-out", config.transitions?.easing?.out);
+	setVar("--theme-transition-easing-in-out", config.transitions?.easing?.inOut);
+
+	return variables;
+}
+
 /**
  * Generate CSS variables from ThemeConfig
  * Returns a string of CSS custom properties that can be injected into a style tag
  */
 export function generateCSSVariables(config: ThemeConfig): string {
-	const variables: string[] = [];
+	const variables = buildThemeVariableMap(config);
+	return Object.entries(variables)
+		.map(([key, value]) => `${key}: ${value};`)
+		.join("\n");
+}
 
-	// Colors
-	variables.push(`--theme-primary: ${config.colors.primary};`);
-	if (config.colors.primaryHover) {
-		variables.push(`--theme-primary-hover: ${config.colors.primaryHover};`);
-	}
-	variables.push(
-		`--theme-primary-foreground: ${config.colors.primaryForeground};`,
-	);
-
-	variables.push(`--theme-secondary: ${config.colors.secondary};`);
-	if (config.colors.secondaryHover) {
-		variables.push(`--theme-secondary-hover: ${config.colors.secondaryHover};`);
-	}
-	variables.push(
-		`--theme-secondary-foreground: ${config.colors.secondaryForeground};`,
-	);
-
-	variables.push(`--theme-accent: ${config.colors.accent};`);
-	if (config.colors.accentHover) {
-		variables.push(`--theme-accent-hover: ${config.colors.accentHover};`);
-	}
-	variables.push(
-		`--theme-accent-foreground: ${config.colors.accentForeground};`,
-	);
-
-	variables.push(`--theme-background: ${config.colors.background};`);
-	variables.push(`--theme-surface: ${config.colors.surface};`);
-	variables.push(`--theme-card: ${config.colors.card};`);
-	variables.push(`--theme-card-foreground: ${config.colors.cardForeground};`);
-
-	// Text colors
-	variables.push(`--theme-text-primary: ${config.colors.text.primary};`);
-	variables.push(`--theme-text-secondary: ${config.colors.text.secondary};`);
-	variables.push(`--theme-text-muted: ${config.colors.text.muted};`);
-	if (config.colors.text.inverse) {
-		variables.push(`--theme-text-inverse: ${config.colors.text.inverse};`);
-	}
-
-	// Border colors
-	variables.push(`--theme-border: ${config.colors.border};`);
-	variables.push(`--theme-input: ${config.colors.input};`);
-	variables.push(`--theme-ring: ${config.colors.ring};`);
-
-	// Button colors
-	variables.push(`--theme-button-primary: ${config.colors.button.primary};`);
-	variables.push(
-		`--theme-button-primary-hover: ${config.colors.button.primaryHover};`,
-	);
-	variables.push(
-		`--theme-button-secondary: ${config.colors.button.secondary};`,
-	);
-	variables.push(
-		`--theme-button-secondary-hover: ${config.colors.button.secondaryHover};`,
-	);
-	variables.push(
-		`--theme-button-destructive: ${config.colors.button.destructive};`,
-	);
-	variables.push(
-		`--theme-button-destructive-hover: ${config.colors.button.destructiveHover};`,
-	);
-
-	// Status colors
-	if (config.colors.success) {
-		variables.push(`--theme-success: ${config.colors.success};`);
-	}
-	if (config.colors.warning) {
-		variables.push(`--theme-warning: ${config.colors.warning};`);
-	}
-	if (config.colors.error) {
-		variables.push(`--theme-error: ${config.colors.error};`);
-	}
-	if (config.colors.info) {
-		variables.push(`--theme-info: ${config.colors.info};`);
-	}
-
-	// Chart colors
-	if (config.colors.chart) {
-		if (config.colors.chart.primary) {
-			variables.push(`--theme-chart-primary: ${config.colors.chart.primary};`);
-		}
-		if (config.colors.chart.secondary) {
-			variables.push(
-				`--theme-chart-secondary: ${config.colors.chart.secondary};`,
-			);
-		}
-		if (config.colors.chart.tertiary) {
-			variables.push(
-				`--theme-chart-tertiary: ${config.colors.chart.tertiary};`,
-			);
-		}
-	}
-
-	// Typography - Font families
-	variables.push(
-		`--theme-font-primary: ${config.typography.fontFamily.primary};`,
-	);
-	if (config.typography.fontFamily.secondary) {
-		variables.push(
-			`--theme-font-secondary: ${config.typography.fontFamily.secondary};`,
-		);
-	}
-	if (config.typography.fontFamily.monospace) {
-		variables.push(
-			`--theme-font-mono: ${config.typography.fontFamily.monospace};`,
-		);
-	}
-
-	// Typography - Font sizes
-	variables.push(`--theme-font-size-xs: ${config.typography.fontSize.xs};`);
-	variables.push(`--theme-font-size-sm: ${config.typography.fontSize.sm};`);
-	variables.push(`--theme-font-size-base: ${config.typography.fontSize.base};`);
-	variables.push(`--theme-font-size-lg: ${config.typography.fontSize.lg};`);
-	variables.push(`--theme-font-size-xl: ${config.typography.fontSize.xl};`);
-	variables.push(
-		`--theme-font-size-2xl: ${config.typography.fontSize["2xl"]};`,
-	);
-	variables.push(
-		`--theme-font-size-3xl: ${config.typography.fontSize["3xl"]};`,
-	);
-	variables.push(
-		`--theme-font-size-4xl: ${config.typography.fontSize["4xl"]};`,
-	);
-	variables.push(
-		`--theme-font-size-5xl: ${config.typography.fontSize["5xl"]};`,
-	);
-
-	// Typography - Font weights
-	variables.push(
-		`--theme-font-weight-light: ${config.typography.fontWeight.light};`,
-	);
-	variables.push(
-		`--theme-font-weight-normal: ${config.typography.fontWeight.normal};`,
-	);
-	variables.push(
-		`--theme-font-weight-medium: ${config.typography.fontWeight.medium};`,
-	);
-	variables.push(
-		`--theme-font-weight-semibold: ${config.typography.fontWeight.semibold};`,
-	);
-	variables.push(
-		`--theme-font-weight-bold: ${config.typography.fontWeight.bold};`,
-	);
-
-	// Typography - Line heights
-	variables.push(
-		`--theme-line-height-tight: ${config.typography.lineHeight.tight};`,
-	);
-	variables.push(
-		`--theme-line-height-normal: ${config.typography.lineHeight.normal};`,
-	);
-	variables.push(
-		`--theme-line-height-relaxed: ${config.typography.lineHeight.relaxed};`,
-	);
-
-	// Spacing
-	Object.entries(config.spacing).forEach(([key, value]) => {
-		variables.push(`--theme-spacing-${key}: ${value};`);
-	});
-
-	// Border radius
-	variables.push(`--theme-radius-none: ${config.borderRadius.none};`);
-	variables.push(`--theme-radius-sm: ${config.borderRadius.sm};`);
-	variables.push(`--theme-radius-md: ${config.borderRadius.md};`);
-	variables.push(`--theme-radius-lg: ${config.borderRadius.lg};`);
-	variables.push(`--theme-radius-xl: ${config.borderRadius.xl};`);
-	variables.push(`--theme-radius-full: ${config.borderRadius.full};`);
-
-	// Shadows
-	if (config.shadows) {
-		if (config.shadows.sm) {
-			variables.push(`--theme-shadow-sm: ${config.shadows.sm};`);
-		}
-		if (config.shadows.md) {
-			variables.push(`--theme-shadow-md: ${config.shadows.md};`);
-		}
-		if (config.shadows.lg) {
-			variables.push(`--theme-shadow-lg: ${config.shadows.lg};`);
-		}
-		if (config.shadows.xl) {
-			variables.push(`--theme-shadow-xl: ${config.shadows.xl};`);
-		}
-		if (config.shadows["2xl"]) {
-			variables.push(`--theme-shadow-2xl: ${config.shadows["2xl"]};`);
-		}
-		if (config.shadows.inner) {
-			variables.push(`--theme-shadow-inner: ${config.shadows.inner};`);
-		}
-		if (config.shadows.none) {
-			variables.push(`--theme-shadow-none: ${config.shadows.none};`);
-		}
-	}
-
-	// Transitions
-	if (config.transitions) {
-		if (config.transitions.duration) {
-			if (config.transitions.duration.fast) {
-				variables.push(
-					`--theme-transition-duration-fast: ${config.transitions.duration.fast};`,
-				);
-			}
-			if (config.transitions.duration.normal) {
-				variables.push(
-					`--theme-transition-duration-normal: ${config.transitions.duration.normal};`,
-				);
-			}
-			if (config.transitions.duration.slow) {
-				variables.push(
-					`--theme-transition-duration-slow: ${config.transitions.duration.slow};`,
-				);
-			}
-		}
-		if (config.transitions.easing) {
-			if (config.transitions.easing.default) {
-				variables.push(
-					`--theme-transition-easing-default: ${config.transitions.easing.default};`,
-				);
-			}
-			if (config.transitions.easing.in) {
-				variables.push(
-					`--theme-transition-easing-in: ${config.transitions.easing.in};`,
-				);
-			}
-			if (config.transitions.easing.out) {
-				variables.push(
-					`--theme-transition-easing-out: ${config.transitions.easing.out};`,
-				);
-			}
-			if (config.transitions.easing.inOut) {
-				variables.push(
-					`--theme-transition-easing-in-out: ${config.transitions.easing.inOut};`,
-				);
-			}
-		}
-	}
-
-	return variables.join("\n");
+export function themeConfigToCSSVariables(
+	config: ThemeConfig,
+): ThemeVariableMap {
+	return buildThemeVariableMap(config);
 }
 
 /**
@@ -295,6 +204,11 @@ export function getDefaultThemeConfig(): ThemeConfig {
 			warning: "#f59e0b",
 			error: "#ef4444",
 			info: "#3b82f6",
+			chart: {
+				primary: "#3b82f6",
+				secondary: "#10b981",
+				tertiary: "#f59e0b",
+			},
 		},
 		typography: {
 			fontFamily: {

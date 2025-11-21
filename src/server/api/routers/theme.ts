@@ -121,6 +121,13 @@ export const themeRouter = createTRPCRouter({
 					{ isDefault: "desc" }, // Default theme first
 					{ createdAt: "desc" },
 				],
+				include: {
+					_count: {
+						select: {
+							templates: true,
+						},
+					},
+				},
 			});
 		}),
 

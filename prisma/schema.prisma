@@ -470,6 +470,7 @@ model MediaAsset {
   uploaderId String?
   type       MediaAssetType @default(GENERIC)
   url        String
+  uploadthingKey String?
   size       Int?
   metadata   Json?
   createdAt  DateTime       @default(now())

@@ -6,6 +6,15 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ColorGroup } from "@/components/branding/color-group";
+import {
+	SpacingEditor,
+	type SpacingField,
+} from "@/components/branding/spacing-editor";
+import { ThemePreview } from "@/components/branding/theme-preview";
+import {
+	type FontOption,
+	TypographyEditor,
+} from "@/components/branding/typography-editor";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -26,13 +35,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getDefaultThemeConfig } from "@/lib/theme";
 import { api } from "@/trpc/react";
@@ -53,7 +55,7 @@ export function ThemeCreator({
 		getDefaultThemeConfig(),
 	);
 
-	const FONT_OPTIONS = [
+	const FONT_OPTIONS: FontOption[] = [
 		{ label: "Inter", value: "Inter, system-ui, sans-serif" },
 		{
 			label: "Geist Sans",
@@ -122,30 +124,31 @@ export function ThemeCreator({
 	}, [open, resetForm]);
 
 	const updateConfigAtPath = useCallback(
-		(path: string[], value: string) => {
+		(path: string[], value: string | number) => {
 			setThemeConfig((prev) => {
 				const updated = cloneThemeConfig(prev);
-				const segments = [...path];
-
-				if (segments.length === 0) {
+				if (path.length === 0) {
 					return updated;
 				}
 
-				const targetParent = segments
-					.slice(0, -1)
-					.reduce<Record<string, unknown>>(
-						(acc, key) => {
-							const next = acc[key];
-							if (typeof next === "object" && next !== null) {
-								return next as Record<string, unknown>;
-							}
-							return acc;
-						},
-						updated as unknown as Record<string, unknown>,
-					);
+				let pointer: Record<string, unknown> = updated as unknown as Record<
+					string,
+					unknown
+				>;
 
-				const lastKey = segments[segments.length - 1] as string;
-				targetParent[lastKey] = value;
+				path.forEach((segment, index) => {
+					if (index === path.length - 1) {
+						pointer[segment] = value;
+						return;
+					}
+
+					const next = pointer[segment];
+					if (typeof next !== "object" || next === null) {
+						pointer[segment] = {};
+					}
+					pointer = pointer[segment] as Record<string, unknown>;
+				});
+
 				return updated;
 			});
 		},
@@ -159,15 +162,24 @@ export function ThemeCreator({
 		[updateConfigAtPath],
 	);
 
-	const handleTypographyChange = (path: string) => (value: string) => {
+	const handleTypographyChange = (path: string) => (value: string | number) => {
 		updateConfigAtPath(path.split("."), value);
 	};
 
-	const handleSpacingChange =
-		(key: keyof ThemeConfig["spacing"]) =>
-		(event: React.ChangeEvent<HTMLInputElement>) => {
-			updateConfigAtPath(["spacing", key], event.target.value);
-		};
+	const handleNumericTypographyChange = (path: string) => (value: string) => {
+		const numericValue = Number(value);
+		updateConfigAtPath(
+			path.split("."),
+			Number.isNaN(numericValue) ? value : numericValue,
+		);
+	};
+
+	const handleSpacingValueChange = useCallback(
+		(key: keyof ThemeConfig["spacing"], value: string) => {
+			updateConfigAtPath(["spacing", key], value);
+		},
+		[updateConfigAtPath],
+	);
 
 	const handleCreate = form.handleSubmit((values) => {
 		createTheme.mutate({
@@ -263,6 +275,12 @@ export function ThemeCreator({
 				value: themeConfig.colors.input,
 				description: "Input backgrounds",
 			},
+			{
+				id: "colors.ring",
+				label: "Focus Ring",
+				value: themeConfig.colors.ring,
+				description: "Outline on focused controls",
+			},
 		],
 		[themeConfig],
 	);
@@ -287,22 +305,223 @@ export function ThemeCreator({
 				value: themeConfig.colors.text.muted,
 				description: "Disabled or subtle copy",
 			},
+			{
+				id: "colors.text.inverse",
+				label: "Text Inverse",
+				value: themeConfig.colors.text.inverse ?? "#ffffff",
+				description: "Text/icons on dark backgrounds",
+			},
 		],
 		[themeConfig],
 	);
 
-	const spacingFields = useMemo(
-		() =>
-			[
-				{ key: "0", description: "Zero spacing (tight)" },
-				{ key: "1", description: "2px spacing" },
-				{ key: "2", description: "4px spacing" },
-				{ key: "3", description: "6px spacing" },
-				{ key: "4", description: "8px spacing" },
-				{ key: "5", description: "10px spacing" },
-				{ key: "6", description: "12px spacing" },
-				{ key: "8", description: "16px spacing" },
-			] as Array<{ key: keyof ThemeConfig["spacing"]; description: string }>,
+	const buttonColorFields = useMemo(
+		() => [
+			{
+				id: "colors.button.primary",
+				label: "Primary Button",
+				value: themeConfig.colors.button.primary,
+				description: "Primary call-to-action background",
+			},
+			{
+				id: "colors.button.primaryHover",
+				label: "Primary Hover",
+				value: themeConfig.colors.button.primaryHover,
+				description: "Hover state for primary CTAs",
+			},
+			{
+				id: "colors.button.secondary",
+				label: "Secondary Button",
+				value: themeConfig.colors.button.secondary,
+				description: "Secondary CTAs and ghost buttons",
+			},
+			{
+				id: "colors.button.secondaryHover",
+				label: "Secondary Hover",
+				value: themeConfig.colors.button.secondaryHover,
+				description: "Hover state for secondary CTAs",
+			},
+			{
+				id: "colors.button.destructive",
+				label: "Destructive Button",
+				value: themeConfig.colors.button.destructive,
+				description: "Danger actions like delete or reset",
+			},
+			{
+				id: "colors.button.destructiveHover",
+				label: "Destructive Hover",
+				value: themeConfig.colors.button.destructiveHover,
+				description: "Hover state for destructive actions",
+			},
+		],
+		[themeConfig],
+	);
+
+	const feedbackColorFields = useMemo(
+		() => [
+			{
+				id: "colors.success",
+				label: "Success",
+				value: themeConfig.colors.success ?? "#10b981",
+				description: "Success alerts, badges, and charts",
+			},
+			{
+				id: "colors.warning",
+				label: "Warning",
+				value: themeConfig.colors.warning ?? "#f59e0b",
+				description: "Warnings, reminders, and banners",
+			},
+			{
+				id: "colors.error",
+				label: "Error",
+				value: themeConfig.colors.error ?? "#ef4444",
+				description: "Errors, destructive states, and alerts",
+			},
+			{
+				id: "colors.info",
+				label: "Info",
+				value: themeConfig.colors.info ?? themeConfig.colors.primary,
+				description: "Info chips, tooltips, and badges",
+			},
+		],
+		[themeConfig],
+	);
+
+	const chartColorFields = useMemo(() => {
+		const fallbackChart = {
+			primary: themeConfig.colors.chart?.primary ?? themeConfig.colors.primary,
+			secondary:
+				themeConfig.colors.chart?.secondary ?? themeConfig.colors.secondary,
+			tertiary: themeConfig.colors.chart?.tertiary ?? themeConfig.colors.accent,
+		};
+
+		return [
+			{
+				id: "colors.chart.primary",
+				label: "Chart Primary",
+				value: fallbackChart.primary,
+				description: "Main data series",
+			},
+			{
+				id: "colors.chart.secondary",
+				label: "Chart Secondary",
+				value: fallbackChart.secondary,
+				description: "Comparative data series",
+			},
+			{
+				id: "colors.chart.tertiary",
+				label: "Chart Tertiary",
+				value: fallbackChart.tertiary,
+				description: "Highlights, tertiary data, or trendlines",
+			},
+		];
+	}, [themeConfig]);
+
+	const spacingFields = useMemo<SpacingField[]>(
+		() => [
+			{
+				key: "0",
+				label: "Spacing 0 (0px)",
+				description: "Use when elements must sit flush without gaps.",
+				placeholder: "0px",
+			},
+			{
+				key: "1",
+				label: "Spacing 1 (~4px)",
+				description: "Micro spacing for tight iconography or label stacks.",
+				placeholder: "0.25rem",
+			},
+			{
+				key: "2",
+				label: "Spacing 2 (~8px)",
+				description: "Compact padding inside buttons or chips.",
+				placeholder: "0.5rem",
+			},
+			{
+				key: "3",
+				label: "Spacing 3 (~12px)",
+				description: "Comfortable gaps between text blocks.",
+				placeholder: "0.75rem",
+			},
+			{
+				key: "4",
+				label: "Spacing 4 (~16px)",
+				description: "Default padding for cards, modals, and panels.",
+				placeholder: "1rem",
+			},
+			{
+				key: "5",
+				label: "Spacing 5 (~20px)",
+				description: "Balanced spacing around form sections.",
+				placeholder: "1.25rem",
+			},
+			{
+				key: "6",
+				label: "Spacing 6 (~24px)",
+				description: "Spacing between stacked cards or CTA blocks.",
+				placeholder: "1.5rem",
+			},
+			{
+				key: "8",
+				label: "Spacing 8 (~32px)",
+				description: "Generous spacing for hero and feature bands.",
+				placeholder: "2rem",
+			},
+			{
+				key: "10",
+				label: "Spacing 10 (~40px)",
+				description: "Larger breathing room for pricing tables.",
+				placeholder: "2.5rem",
+			},
+			{
+				key: "12",
+				label: "Spacing 12 (~48px)",
+				description: "Use between major page sections.",
+				placeholder: "3rem",
+			},
+			{
+				key: "16",
+				label: "Spacing 16 (~64px)",
+				description: "Desktop gutters or wide section padding.",
+				placeholder: "4rem",
+			},
+			{
+				key: "20",
+				label: "Spacing 20 (~80px)",
+				description: "Hero-to-content spacing for landing pages.",
+				placeholder: "5rem",
+			},
+			{
+				key: "24",
+				label: "Spacing 24 (~96px)",
+				description: "Use for distinct content group separation.",
+				placeholder: "6rem",
+			},
+			{
+				key: "32",
+				label: "Spacing 32 (~128px)",
+				description: "Applies to billboard layouts on large screens.",
+				placeholder: "8rem",
+			},
+			{
+				key: "40",
+				label: "Spacing 40 (~160px)",
+				description: "Hero backgrounds with dramatic whitespace.",
+				placeholder: "10rem",
+			},
+			{
+				key: "48",
+				label: "Spacing 48 (~192px)",
+				description: "Campaign splash pages and full-bleed sections.",
+				placeholder: "12rem",
+			},
+			{
+				key: "64",
+				label: "Spacing 64 (~256px)",
+				description: "Maximum spacing for marquee elements.",
+				placeholder: "16rem",
+			},
+		],
 		[],
 	);
 
@@ -447,147 +666,49 @@ export function ThemeCreator({
 							title="Text Colors"
 						/>
 
-						<section className="flex flex-col gap-4 rounded-lg border p-4">
-							<header>
-								<h3 className="font-semibold text-sm">Typography</h3>
-							</header>
-							<div className="grid gap-4 sm:grid-cols-2">
-								<FormField
-									control={form.control}
-									name="primaryFont"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Primary Font</FormLabel>
-											<FormDescription>
-												Used for headings, buttons, emphasis text.
-											</FormDescription>
-											<FormControl>
-												<Select
-													onValueChange={(value) => {
-														field.onChange(value);
-														handleTypographyChange(
-															"typography.fontFamily.primary",
-														)(value);
-													}}
-													value={field.value}
-												>
-													<SelectTrigger className="w-full">
-														<SelectValue placeholder="Select a font" />
-													</SelectTrigger>
-													<SelectContent>
-														{FONT_OPTIONS.map((option) => (
-															<SelectItem
-																key={option.value}
-																value={option.value}
-															>
-																{option.label}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+						<ColorGroup
+							fields={buttonColorFields}
+							onChange={handleColorGroupChange}
+							title="Buttons & CTAs"
+						/>
 
-								<FormField
-									control={form.control}
-									name="secondaryFont"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Secondary Font</FormLabel>
-											<FormDescription>
-												Body copy, paragraphs, supporting text.
-											</FormDescription>
-											<FormControl>
-												<Select
-													onValueChange={(value) => {
-														field.onChange(value);
-														handleTypographyChange(
-															"typography.fontFamily.secondary",
-														)(value);
-													}}
-													value={field.value}
-												>
-													<SelectTrigger className="w-full">
-														<SelectValue placeholder="Select a font" />
-													</SelectTrigger>
-													<SelectContent>
-														{FONT_OPTIONS.map((option) => (
-															<SelectItem
-																key={option.value}
-																value={option.value}
-															>
-																{option.label}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-							<div className="grid gap-4 sm:grid-cols-2">
-								<div className="flex flex-col gap-2">
-									<Label htmlFor="font-size-base">Base Font Size</Label>
-									<Input
-										id="font-size-base"
-										onChange={(e) =>
-											handleTypographyChange("typography.fontSize.base")(
-												e.target.value,
-											)
-										}
-										placeholder="1rem"
-										value={themeConfig.typography.fontSize.base}
-									/>
-								</div>
-								<div className="flex flex-col gap-2">
-									<Label htmlFor="line-height-normal">Line Height</Label>
-									<Input
-										id="line-height-normal"
-										onChange={(e) =>
-											handleTypographyChange("typography.lineHeight.normal")(
-												e.target.value,
-											)
-										}
-										placeholder="1.5"
-										value={themeConfig.typography.lineHeight.normal}
-									/>
-								</div>
-							</div>
-						</section>
+						<ColorGroup
+							fields={feedbackColorFields}
+							onChange={handleColorGroupChange}
+							title="Status & Feedback"
+						/>
 
-						<section className="flex flex-col gap-4 rounded-lg border p-4">
-							<header>
-								<h3 className="font-semibold text-sm">Spacing Scale</h3>
-							</header>
-							<div className="grid gap-4 sm:grid-cols-2">
-								{spacingFields.map((field) => (
-									<div
-										className="flex flex-col gap-2"
-										key={`spacing-${field.key}`}
-									>
-										<div className="flex flex-col gap-1">
-											<Label htmlFor={`spacing-${field.key}`}>
-												Spacing {field.key}
-											</Label>
-											<p className="text-muted-foreground text-xs">
-												{field.description}
-											</p>
-										</div>
-										<Input
-											id={`spacing-${field.key}`}
-											onChange={handleSpacingChange(field.key)}
-											placeholder="0.25rem"
-											value={themeConfig.spacing[field.key]}
-										/>
-									</div>
-								))}
-							</div>
-						</section>
+						<ColorGroup
+							fields={chartColorFields}
+							onChange={handleColorGroupChange}
+							title="Data Visualization"
+						/>
+
+						<ThemePreview config={themeConfig} />
+
+						<TypographyEditor
+							fontOptions={FONT_OPTIONS}
+							form={form}
+							onFontChange={(path, value) =>
+								handleTypographyChange(path)(value)
+							}
+							onNumericTokenChange={(path) => (value) =>
+								handleNumericTypographyChange(path)(value)
+							}
+							onTokenChange={(path) => (value) =>
+								handleTypographyChange(path)(value)
+							}
+							primaryFontField="primaryFont"
+							secondaryFontField="secondaryFont"
+							typography={themeConfig.typography}
+						/>
+
+						<SpacingEditor
+							fields={spacingFields}
+							onChange={handleSpacingValueChange}
+							previewKeys={["1", "2", "4", "8", "16", "32"]}
+							spacingValues={themeConfig.spacing}
+						/>
 						<section className="flex flex-col gap-4 rounded-lg border p-4">
 							<header>
 								<h3 className="font-semibold text-sm">Advanced</h3>
