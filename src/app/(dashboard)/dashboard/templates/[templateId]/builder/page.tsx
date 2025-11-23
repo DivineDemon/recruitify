@@ -110,11 +110,14 @@ const TemplateBuilderPage = ({ params }: TemplateBuilderPageProps) => {
 
 	return (
 		<BuilderContainer
+			agencyId={template.agencyId}
 			hasUnsavedChanges={hasUnsavedChanges}
 			initialTree={tree}
 			isSaving={updatePageTree.isPending}
 			onSave={handleSave}
 			onTreeChange={handleTreeChange}
+			selectedLogoId={template.selectedLogoId}
+			selectedThemeId={template.selectedThemeId}
 			showSaveButton={true}
 			templateDescription={template.description ?? undefined}
 			templateId={templateId}

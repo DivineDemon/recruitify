@@ -6,6 +6,8 @@ import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LogoSelector } from "@/components/branding/logo-selector";
+import { ThemeSelector } from "@/components/branding/theme-selector";
 import { Canvas } from "@/components/builder/canvas";
 import { Inspector } from "@/components/builder/inspector";
 import { Palette } from "@/components/builder/palette";
@@ -17,6 +19,7 @@ import {
 import type { BuilderNode } from "@/components/builder/types";
 import { CreateTemplateDialog } from "@/components/templates/create-template-dialog";
 import { EditTemplateDialog } from "@/components/templates/edit-template-dialog";
+import { CSSVariablesInjector } from "@/components/theme/css-variables-injector";
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 
@@ -143,6 +146,8 @@ interface BuilderContainerProps {
 	agencyId?: string;
 	templateTitle?: string;
 	templateDescription?: string;
+	selectedThemeId?: string | null;
+	selectedLogoId?: string | null;
 	onTemplateMetadataChange?: (
 		title: string,
 		description: string | null,
@@ -161,6 +166,8 @@ export const BuilderContainer = ({
 	agencyId,
 	templateTitle: propTemplateTitle,
 	templateDescription: propTemplateDescription,
+	selectedThemeId: propSelectedThemeId,
+	selectedLogoId: propSelectedLogoId,
 	onTemplateMetadataChange,
 	hasUnsavedChanges = false,
 	isSaving = false,
@@ -177,6 +184,13 @@ export const BuilderContainer = ({
 	const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 	const [editMetadataDialogOpen, setEditMetadataDialogOpen] = useState(false);
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+	// Local state for theme/logo when creating new template
+	const [localSelectedThemeId, setLocalSelectedThemeId] = useState<
+		string | null
+	>(null);
+	const [localSelectedLogoId, setLocalSelectedLogoId] = useState<string | null>(
+		null,
+	);
 
 	const utils = api.useUtils();
 	const createTemplate = api.template.create.useMutation({
@@ -304,6 +318,8 @@ export const BuilderContainer = ({
 			title,
 			description,
 			pageTree: tree,
+			selectedThemeId: localSelectedThemeId ?? undefined,
+			selectedLogoId: localSelectedLogoId ?? undefined,
 		});
 	};
 
@@ -316,6 +332,32 @@ export const BuilderContainer = ({
 		});
 	};
 
+	const handleThemeChange = (themeId: string) => {
+		if (templateId) {
+			// Update existing template
+			updateMetadata.mutate({
+				templateId,
+				selectedThemeId: themeId,
+			});
+		} else {
+			// Store in local state for new template
+			setLocalSelectedThemeId(themeId);
+		}
+	};
+
+	const handleLogoChange = (logoId: string) => {
+		if (templateId) {
+			// Update existing template
+			updateMetadata.mutate({
+				templateId,
+				selectedLogoId: logoId,
+			});
+		} else {
+			// Store in local state for new template
+			setLocalSelectedLogoId(logoId);
+		}
+	};
+
 	const handleOpenEditDialog = () => {
 		setEditMetadataDialogOpen(true);
 	};
@@ -324,122 +366,157 @@ export const BuilderContainer = ({
 		const newTree = createInitialTree();
 		setTree(newTree);
 		setSelectedId(null);
+		setLocalSelectedThemeId(null);
+		setLocalSelectedLogoId(null);
 		if (onReset) {
 			onReset();
 		}
 	};
 
+	// Determine which theme/logo to use: props for existing template, local state for new template
+	const activeThemeId = templateId
+		? propSelectedThemeId
+		: (localSelectedThemeId ?? undefined);
+	const activeLogoId = templateId
+		? propSelectedLogoId
+		: (localSelectedLogoId ?? undefined);
+
 	return (
 		<div className="flex h-full w-full flex-col">
-			<div
-				className="flex h-full w-full flex-1 items-start justify-start"
-				style={{
-					backgroundImage: `
+			<CSSVariablesInjector scope="global" themeId={activeThemeId ?? undefined}>
+				<div
+					className="flex h-full w-full flex-1 items-start justify-start"
+					style={{
+						backgroundImage: `
           repeating-linear-gradient(0deg, ${gridColor} 0px 1px, transparent 1px 40px),
           repeating-linear-gradient(90deg, ${gridColor} 0px 1px, transparent 1px 40px)
         `,
-				}}
-			>
-				<div className="h-full flex-1 p-5">
-					<Canvas
-						onDropBlock={handleDropBlock}
-						onMoveNode={handleMoveNode}
-						onSelect={setSelectedId}
-						registry={BLOCKS}
-						selectedId={selectedId}
-						tree={tree}
-					/>
-				</div>
-				<div className="flex h-full w-[300px] flex-col items-start justify-start border-l bg-sidebar">
-					<div
-						className="flex h-[calc(100vh-121px)] w-full flex-col items-start justify-start overflow-y-auto"
-						id="options"
-					>
-						{selectedNode ? (
-							<Inspector
-								isRootNode={selectedNode.type === "root"}
-								node={selectedNode}
-								onClose={() => setSelectedId(null)}
-								onRemove={(id) => {
-									setTree((prev) => removeNode(prev, id));
-									if (selectedId === id) setSelectedId(null);
-								}}
-								onUpdate={(nodeId, newProps) =>
-									setTree((prev) => updateNodeProps(prev, nodeId, newProps))
-								}
-								registry={BLOCKS}
-							/>
-						) : (
-							<Palette blocks={PALETTE} />
-						)}
+					}}
+				>
+					<div className="h-full flex-1 p-5">
+						<Canvas
+							onDropBlock={handleDropBlock}
+							onMoveNode={handleMoveNode}
+							onSelect={setSelectedId}
+							registry={BLOCKS}
+							selectedId={selectedId}
+							tree={tree}
+						/>
 					</div>
-					{showSaveButton && (
-						<div className="mt-auto flex w-full flex-col gap-2 border-t p-2.5">
-							{templateId ? (
-								<div className="flex w-full flex-col items-start justify-start gap-2.5">
-									<div className="flex w-full items-center justify-center gap-2.5">
-										<span className="w-full truncate text-left text-[14px] text-muted-foreground leading-[14px]">
-											{propTemplateTitle}
-										</span>
-										<span className="w-full text-right text-[14px] text-muted-foreground leading-[14px]">
-											{hasUnsavedChanges && !isSaving && (
-												<span className="whitespace-nowrap text-muted-foreground text-xs">
-													(Unsaved)
-												</span>
-											)}
-											{isSaving && (
-												<div className="flex items-center justify-end gap-2">
-													<Loader2 className="size-3.5 animate-spin" />
-													<span className="whitespace-nowrap text-muted-foreground text-xs">
-														Saving...
-													</span>
-												</div>
-											)}
-											{!hasUnsavedChanges &&
-												!isSaving &&
-												lastSavedAt &&
-												templateId && (
-													<span className="whitespace-nowrap text-muted-foreground text-xs">
-														Saved
-													</span>
-												)}
-										</span>
-									</div>
-									<Button
-										className="w-full"
-										onClick={handleOpenEditDialog}
-										size="sm"
-										type="button"
-										variant="outline"
-									>
-										<Pencil className="mr-2 size-3.5" />
-										Edit Template Info
-									</Button>
-								</div>
+					<div className="flex h-full w-[300px] flex-col items-start justify-start border-l bg-sidebar">
+						<div
+							className="flex h-[calc(100vh-121px)] w-full flex-col items-start justify-start overflow-y-auto"
+							id="options"
+						>
+							{selectedNode ? (
+								<Inspector
+									isRootNode={selectedNode.type === "root"}
+									node={selectedNode}
+									onClose={() => setSelectedId(null)}
+									onRemove={(id) => {
+										setTree((prev) => removeNode(prev, id));
+										if (selectedId === id) setSelectedId(null);
+									}}
+									onUpdate={(nodeId, newProps) =>
+										setTree((prev) => updateNodeProps(prev, nodeId, newProps))
+									}
+									registry={BLOCKS}
+								/>
 							) : (
-								<div className="flex w-full items-center justify-end gap-2.5">
-									<Button
-										className="w-[calc(50%-5px)]"
-										onClick={handleReset}
-										type="button"
-										variant="destructive"
-									>
-										Reset
-									</Button>
-									<Button
-										className="w-[calc(50%-5px)]"
-										disabled={createTemplate.isPending}
-										onClick={handleSave}
-										type="button"
-									>
-										{createTemplate.isPending ? "Creating..." : "Save"}
-									</Button>
-								</div>
+								<>
+									{/* Show theme/logo selectors when agencyId exists (for both new and existing templates) */}
+									{agencyId && (
+										<div className="w-full space-y-2.5 border-b p-2.5">
+											<ThemeSelector
+												agencyId={agencyId}
+												className="w-full"
+												description="Design system for this template"
+												onSelect={handleThemeChange}
+												selectedThemeId={activeThemeId ?? null}
+												showPreview={false}
+											/>
+											<LogoSelector
+												agencyId={agencyId}
+												className="w-full"
+												description="Logo displayed on this template"
+												onSelect={handleLogoChange}
+												selectedLogoId={activeLogoId ?? null}
+												showPreview={false}
+											/>
+										</div>
+									)}
+									<Palette blocks={PALETTE} />
+								</>
 							)}
 						</div>
-					)}
+						{showSaveButton && (
+							<div className="mt-auto flex w-full flex-col gap-2 border-t p-2.5">
+								{templateId ? (
+									<div className="flex w-full flex-col items-start justify-start gap-2.5">
+										<div className="flex w-full items-center justify-center gap-2.5">
+											<span className="w-full truncate text-left text-[14px] text-muted-foreground leading-[14px]">
+												{propTemplateTitle}
+											</span>
+											<span className="w-full text-right text-[14px] text-muted-foreground leading-[14px]">
+												{hasUnsavedChanges && !isSaving && (
+													<span className="whitespace-nowrap text-muted-foreground text-xs">
+														(Unsaved)
+													</span>
+												)}
+												{isSaving && (
+													<div className="flex items-center justify-end gap-2">
+														<Loader2 className="size-3.5 animate-spin" />
+														<span className="whitespace-nowrap text-muted-foreground text-xs">
+															Saving...
+														</span>
+													</div>
+												)}
+												{!hasUnsavedChanges &&
+													!isSaving &&
+													lastSavedAt &&
+													templateId && (
+														<span className="whitespace-nowrap text-muted-foreground text-xs">
+															Saved
+														</span>
+													)}
+											</span>
+										</div>
+										<Button
+											className="w-full"
+											onClick={handleOpenEditDialog}
+											size="sm"
+											type="button"
+											variant="outline"
+										>
+											<Pencil className="mr-2 size-3.5" />
+											Edit Template Info
+										</Button>
+									</div>
+								) : (
+									<div className="flex w-full items-center justify-end gap-2.5">
+										<Button
+											className="w-[calc(50%-5px)]"
+											onClick={handleReset}
+											type="button"
+											variant="destructive"
+										>
+											Reset
+										</Button>
+										<Button
+											className="w-[calc(50%-5px)]"
+											disabled={createTemplate.isPending}
+											onClick={handleSave}
+											type="button"
+										>
+											{createTemplate.isPending ? "Creating..." : "Save"}
+										</Button>
+									</div>
+								)}
+							</div>
+						)}
+					</div>
 				</div>
-			</div>
+			</CSSVariablesInjector>
 			{!templateId && agencyId && (
 				<CreateTemplateDialog
 					isPending={createTemplate.isPending}
