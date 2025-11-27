@@ -359,13 +359,13 @@ export function mergeThemeConfig(
 }
 
 /**
- * Generate theme from AI (placeholder for Phase 5)
- * This will be implemented when AI theme generation is added
+ * Generate theme from AI (deprecated - use specific functions from ai-theme-generator.ts)
+ * @deprecated Use generateThemeFromDescription, generateThemeFromLogo, or generateThemeFromColorPalette instead
  */
 export async function generateThemeFromAI(
-	_prompt: string,
+	prompt: string,
 ): Promise<ThemeConfig> {
-	// TODO: Implement AI theme generation in Phase 5
-	// For now, return default theme
-	throw new Error("AI theme generation not yet implemented");
+	// Re-export for backwards compatibility
+	const { generateThemeFromDescription } = await import("./ai-theme-generator");
+	return generateThemeFromDescription(prompt);
 }

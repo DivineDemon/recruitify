@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum AgencyRole {
@@ -207,23 +206,32 @@ model Template {
   selectedThemeId    String?
   selectedLogoId     String?
   analyticsSummary   Json?
+  isPreDesigned      Boolean        @default(false)
+  sourceTemplateId   String?
+  previewImageUrl    String?
+  category           String?
+  tags               Json?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
-  agency           Agency                    @relation(fields: [agencyId], references: [id])
-  selectedTheme    Theme?                    @relation(fields: [selectedThemeId], references: [id])
-  selectedLogo     MediaAsset?               @relation("TemplateLogo", fields: [selectedLogoId], references: [id])
-  publishedVersion TemplateVersion?          @relation("TemplatePublishedVersion", fields: [publishedVersionId], references: [id])
-  versions         TemplateVersion[]
-  pages            Page[]
-  jobs             Job[]
-  applications     Application[]
-  domains          Domain[]                  @relation("TemplateDomains")
-  publishRecords   PublishRecord[]
-  analyticsEvents  AnalyticsEvent[]
-  analyticsDaily   AnalyticsDailyAggregate[]
+  agency              Agency                    @relation(fields: [agencyId], references: [id])
+  selectedTheme       Theme?                    @relation(fields: [selectedThemeId], references: [id])
+  selectedLogo        MediaAsset?               @relation("TemplateLogo", fields: [selectedLogoId], references: [id])
+  publishedVersion    TemplateVersion?          @relation("TemplatePublishedVersion", fields: [publishedVersionId], references: [id])
+  sourceTemplate      Template?                 @relation("TemplateSource", fields: [sourceTemplateId], references: [id])
+  duplicatedTemplates Template[]                @relation("TemplateSource")
+  versions            TemplateVersion[]
+  pages               Page[]
+  jobs                Job[]
+  applications        Application[]
+  domains             Domain[]                  @relation("TemplateDomains")
+  publishRecords      PublishRecord[]
+  analyticsEvents     AnalyticsEvent[]
+  analyticsDaily      AnalyticsDailyAggregate[]
 
   @@index([agencyId, status])
+  @@index([isPreDesigned])
+  @@index([isPreDesigned, category])
 }
 
 model TemplateVersion {
@@ -465,15 +473,15 @@ model AnalyticsDailyAggregate {
 }
 
 model MediaAsset {
-  id         String         @id @default(cuid())
-  agencyId   String
-  uploaderId String?
-  type       MediaAssetType @default(GENERIC)
-  url        String
+  id             String         @id @default(cuid())
+  agencyId       String
+  uploaderId     String?
+  type           MediaAssetType @default(GENERIC)
+  url            String
   uploadthingKey String?
-  size       Int?
-  metadata   Json?
-  createdAt  DateTime       @default(now())
+  size           Int?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
 
   agency       Agency     @relation(fields: [agencyId], references: [id])
   uploader     User?      @relation("UserMediaAssets", fields: [uploaderId], references: [id])

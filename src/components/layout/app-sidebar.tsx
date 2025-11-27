@@ -58,20 +58,40 @@ const AppSidebar = ({
 						<SidebarGroup key={item.category}>
 							<SidebarGroupLabel>{item.category}</SidebarGroupLabel>
 							<SidebarGroupContent className="space-y-1">
-								{item.items.map((item) => (
-									<SidebarMenuItem key={item.href}>
-										<SidebarMenuButton
-											asChild
-											className="justify-start gap-2 transition-all duration-200 hover:bg-primary/20 hover:text-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground data-[active=true]:hover:opacity-75"
-											isActive={pathname.endsWith(item.href)}
-										>
-											<Link href={item.href}>
-												<item.icon className="size-4" />
-												<span className="truncate">{item.text}</span>
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								))}
+								{item.items.map((menuItem) => {
+									// Check if this route has sibling routes (child routes in sidebar)
+									// If it does, only match exactly to prevent parent from being active when on child
+									const hasSiblingChildRoutes = item.items.some(
+										(otherItem: typeof menuItem) =>
+											otherItem.href !== menuItem.href &&
+											otherItem.href.startsWith(`${menuItem.href}/`),
+									);
+
+									// Check if pathname matches exactly
+									// For routes with sibling child routes, only match exactly
+									// Otherwise, match exactly or direct children
+									const isActive = hasSiblingChildRoutes
+										? pathname === menuItem.href
+										: pathname === menuItem.href ||
+											(pathname.startsWith(`${menuItem.href}/`) &&
+												pathname.slice(menuItem.href.length + 1).split("/")
+													.length === 1);
+
+									return (
+										<SidebarMenuItem key={menuItem.href}>
+											<SidebarMenuButton
+												asChild
+												className="justify-start gap-2 transition-all duration-200 hover:bg-primary/20 hover:text-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary data-[active=true]:hover:text-primary-foreground data-[active=true]:hover:opacity-75"
+												isActive={isActive}
+											>
+												<Link href={menuItem.href}>
+													<menuItem.icon className="size-4" />
+													<span className="truncate">{menuItem.text}</span>
+												</Link>
+											</SidebarMenuButton>
+										</SidebarMenuItem>
+									);
+								})}
 							</SidebarGroupContent>
 						</SidebarGroup>
 					))}

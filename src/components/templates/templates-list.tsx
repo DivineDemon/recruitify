@@ -76,13 +76,22 @@ const TemplatesList = ({ agencyId }: TemplatesListProps) => {
 						Create and manage website templates for your recruitment agency.
 					</p>
 				</div>
-				<Button
-					onClick={() => router.push("/dashboard/builder")}
-					size="default"
-				>
-					<Plus />
-					New Template
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						onClick={() => router.push("/dashboard/templates/marketplace")}
+						size="default"
+						variant="outline"
+					>
+						Browse Marketplace
+					</Button>
+					<Button
+						onClick={() => router.push("/dashboard/builder")}
+						size="default"
+					>
+						<Plus />
+						New Template
+					</Button>
+				</div>
 			</div>
 
 			{isLoading ? (

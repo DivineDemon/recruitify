@@ -99,6 +99,25 @@ After updating `.env`, restart the dev server so Next.js picks up the changes.
 - **Autosave**: Automatic saving of template changes with debouncing
 - **Template Metadata**: Edit template title and description
 
+#### Template Marketplace ✅
+- **Marketplace Browsing**: Browse pre-designed templates in `/dashboard/templates/marketplace`
+- **Template Search**: Search marketplace templates by title, description, and tags
+- **Live Preview**: Preview templates with live theme/logo selection in preview dialog
+- **Template Duplication**: Duplicate marketplace templates to user's agency with theme/logo applied
+- **Navigation**: Sidebar link and templates list button for easy access
+- **Database Schema**: Complete marketplace fields (`isPreDesigned`, `sourceTemplateId`, `previewImageUrl`, `category`, `tags`)
+- **Backend API**: Full tRPC router with list, get, and duplicate procedures
+- **Template Cards**: Display preview images, categories, tags, and descriptions
+- **Preview Dialog**: Full-screen preview with theme/logo selectors and real-time updates
+
+#### Branding & Theme System ✅
+- **Theme Management**: Create, list, update, set default, and delete themes per agency
+- **Theme Configuration**: Comprehensive theme editor with colors, typography, spacing, and advanced options
+- **Logo Management**: Upload, list, and delete logos per agency
+- **Theme Selection in Builder**: Select theme/logo during template creation and editing
+- **CSS Variables Injection**: Dynamic theme application via CSS variables
+- **Template Theme Application**: Published templates render with selected themes and logos
+
 #### Builder - Core Infrastructure ✅
 - **Component Registry**: Centralized block definitions with render and inspector functions
 - **Drag & Drop**: Full drag-and-drop support for adding and reordering elements
@@ -201,31 +220,39 @@ Currently, all planned builder phases are complete. The builder is feature-compl
    - Template preview
    - Template duplication
 
-7. **Job Management**
+7. **Template Marketplace Enhancements** 📋
+   - **Category Filters UI**: Add UI components for filtering by category (backend already supports)
+   - **Tag Filters UI**: Add UI components for filtering by tags (backend already supports, search works)
+   - **Grid/List View Toggle**: Add view toggle for marketplace template display
+   - **Builder Indicators**: Show visual indicator when template was duplicated from marketplace
+   - **Template Badges**: Display "From Marketplace" badge on duplicated templates
+   - **Link to Original**: Add link back to original marketplace template from duplicated templates
+
+8. **Job Management**
    - CRUD operations for jobs
    - Job categories and tags
    - Job status management
    - Job application tracking
 
-8. **Application Management**
+9. **Application Management**
    - View submitted applications
    - Application status workflow
    - Application events/timeline
    - Candidate communication
 
-9. **Domain Management**
-   - Custom domain configuration
-   - Subdomain assignment
-   - Domain verification
-   - SSL certificate management
+10. **Domain Management**
+    - Custom domain configuration
+    - Subdomain assignment
+    - Domain verification
+    - SSL certificate management
 
-10. **Analytics Integration**
+11. **Analytics Integration**
     - Page view tracking
     - Conversion tracking
     - Analytics dashboard
     - Export reports
 
-11. **Billing Integration**
+12. **Billing Integration**
     - Stripe subscription setup
     - Plan management
     - Usage tracking
@@ -307,3 +334,66 @@ The high-level roadmap is documented separately in the planning file. Developmen
 | `WebhookEvent` | Stored incoming webhook payloads. | Tracks source (`STRIPE`, `KINDE`, `UPLOADTHING`, `OTHER`), processing status, errors. |
 
 **Core enums**: `AgencyRole`, `AgencyStatus`, `TemplateStatus`, `EmploymentType`, `JobStatus`, `ApplicationStatus`, `DomainType`, `DomainStatus`, `SubscriptionPlan`, `SubscriptionStatus`, `InvoiceStatus`, `AnalyticsEventType`, `MediaAssetType`, `WebhookSource`, `WebhookStatus`.
+
+## Template Marketplace Implementation Status
+
+### ✅ Completed Features
+
+#### Phase 1: Database Schema ✅
+- ✅ `isPreDesigned: Boolean @default(false)` field added to `Template` model
+- ✅ `sourceTemplateId: String?` field for tracking original template
+- ✅ `previewImageUrl: String?` field for marketplace previews
+- ✅ `category: String?` field for organizing templates
+- ✅ `tags: Json?` field for search/filtering
+- ✅ Indexes: `@@index([isPreDesigned])` and `@@index([isPreDesigned, category])`
+
+#### Phase 2: Backend API ✅
+- ✅ `listMarketplaceTemplates`: Query marketplace templates with search, category, and tags filters
+- ✅ `getMarketplaceTemplate`: Get single marketplace template with full `pageTree` for preview
+- ✅ `duplicateFromMarketplace`: Duplicate marketplace template with theme/logo application
+- ✅ Theme/logo validation (must belong to user's agency)
+- ✅ Marketplace router registered in root router
+
+#### Phase 3: Frontend Components ⚠️
+- ✅ Marketplace page (`/dashboard/templates/marketplace`)
+- ✅ Marketplace client component with search functionality
+- ✅ Template marketplace cards with preview images
+- ✅ Template preview dialog with live theme/logo selection
+- ✅ Templates list "Browse Marketplace" button
+- ❌ Category filters UI (backend supports, but no UI components)
+- ❌ Tag filters UI (backend supports, but no UI components - search works)
+- ❌ Grid/list view toggle
+
+#### Phase 4: Template Preview ✅
+- ✅ `TemplateRendererClient` component for marketplace previews
+- ✅ Supports optional `themeId` and `logoId` props
+- ✅ Real-time theme/logo application in preview
+
+#### Phase 5: Integration & UX ⚠️
+- ✅ Sidebar navigation link (`/dashboard/templates/marketplace`)
+- ✅ Templates list marketplace button
+- ❌ Builder indicator for marketplace-duplicated templates
+- ❌ "From Marketplace" badge on duplicated templates
+- ❌ Link back to original marketplace template
+
+### 🎯 Core Functionality Status
+
+**The marketplace is functionally complete for core use cases:**
+- ✅ Users can browse marketplace templates
+- ✅ Users can search templates
+- ✅ Users can preview templates with their own themes/logos
+- ✅ Users can duplicate templates to their agency
+- ✅ Duplicated templates have theme/logo applied
+- ✅ Navigation is accessible from sidebar and templates list
+
+### 📝 Missing Enhancements
+
+The following features are **enhancements** rather than core functionality:
+1. **Category filters UI** - Backend supports it, but no UI components
+2. **Tag filters UI** - Backend supports it, but no UI components (search works)
+3. **Grid/list view toggle** - Not implemented
+4. **Builder indicator** - No visual indicator when template is from marketplace
+5. **Template badges** - No "From Marketplace" badge on duplicated templates
+6. **Link to original** - No link back to original marketplace template
+
+**Overall Status**: ✅ **Core functionality is complete**. The marketplace is ready for use, with some UX enhancements that can be added later.

@@ -10,6 +10,7 @@ import {
 	Home,
 	LayoutTemplate,
 	Settings,
+	ShoppingBag,
 	User,
 	Users,
 } from "lucide-react";
@@ -37,6 +38,11 @@ export const SIDEBAR_ITEMS = [
 				href: "/dashboard/templates",
 				icon: LayoutTemplate,
 				text: "Templates",
+			},
+			{
+				href: "/dashboard/templates/marketplace",
+				icon: ShoppingBag,
+				text: "Marketplace",
 			},
 		],
 	},

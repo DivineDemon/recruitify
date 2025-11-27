@@ -26,6 +26,7 @@ export const env = createEnv({
 		UPLOADTHING_TOKEN: z.string().min(1),
 		POSTHOG_API_KEY: z.string().min(1),
 		POSTHOG_API_HOST: z.string().url().default("https://app.posthog.com"),
+		GEMINI_API_KEY: z.string().min(1),
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.string().url(),
@@ -59,6 +60,7 @@ export const env = createEnv({
 		UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
 		POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
 		POSTHOG_API_HOST: process.env.POSTHOG_API_HOST,
+		GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 		NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
 			process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
